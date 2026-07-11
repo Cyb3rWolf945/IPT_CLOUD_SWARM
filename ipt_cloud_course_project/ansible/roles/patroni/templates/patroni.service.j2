@@ -1,0 +1,13 @@
+[Unit]
+Description=Patroni
+After=network.target consul.service
+
+[Service]
+Type=simple
+User=postgres
+Group=postgres
+ExecStart=/usr/local/bin/patroni /etc/patroni.yml
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

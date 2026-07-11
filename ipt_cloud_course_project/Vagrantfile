@@ -1,0 +1,87 @@
+# -*- mode: ruby -*-
+# vim: ft=ruby :
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "bento/ubuntu-22.04"
+
+  # Configuração global de Hardware
+  config.vm.provider "virtualbox" do |vb|
+    vb.memory = 1024 # 1GB por máquina (Total: 7GB para o laboratório)
+    vb.cpus = 1
+  end
+
+  # ==========================================
+  # TIER 1: LOAD BALANCERS (Nginx + Keepalived)
+  # ==========================================
+  config.vm.define "lb1" do |lb1|
+    lb1.vm.hostname = "lb1"
+    lb1.vm.network "private_network", ip: "192.168.44.11"
+  end
+
+  config.vm.define "lb2" do |lb2|
+    lb2.vm.hostname = "lb2"
+    lb2.vm.network "private_network", ip: "192.168.44.12"
+  end
+
+  # ==========================================
+  # TIER 2: WEB APPLICATION NODES (PHP-FPM + Nginx/Apache)
+  # ==========================================
+  config.vm.define "web1" do |web1|
+    web1.vm.hostname = "web1"
+    web1.vm.network "private_network", ip: "192.168.44.21"
+    web1.vm.synced_folder "./app", "/var/www/html", owner: "www-data", group: "www-data"
+  end
+
+  config.vm.define "web2" do |web2|
+    web2.vm.hostname = "web2"
+    web2.vm.network "private_network", ip: "192.168.44.22"
+    web2.vm.synced_folder "./app", "/var/www/html", owner: "www-data", group: "www-data"
+  end
+
+  # ==========================================
+  # TIER 3: DATABASE CLUSTER (PostgreSQL + Patroni)
+  # ==========================================
+  config.vm.define "db1" do |db1|
+    db1.vm.hostname = "db1"
+    db1.vm.network "private_network", ip: "192.168.44.31"
+  end
+
+  config.vm.define "db2" do |db2|
+    db2.vm.hostname = "db2"
+    db2.vm.network "private_network", ip: "192.168.44.32"
+  end
+
+  # ==========================================
+  # TIER 4: CACHE (Redis Sentinel Cluster)
+  # ==========================================
+  config.vm.define "storage1" do |storage1|
+    storage1.vm.hostname = "storage1"
+    storage1.vm.network "private_network", ip: "192.168.44.41"
+  end
+
+  config.vm.define "storage2" do |storage2|
+    storage2.vm.hostname = "storage2"
+    storage2.vm.network "private_network", ip: "192.168.44.42"
+  end
+
+  config.vm.define "storage3" do |storage3|
+    storage3.vm.hostname = "storage3"
+    storage3.vm.network "private_network", ip: "192.168.44.43"
+  end
+
+  # ==========================================
+  # TIER 5: OBJECT STORAGE (MinIO)
+  # ==========================================
+  config.vm.define "minio1" do |minio1|
+    minio1.vm.hostname = "minio1"
+    minio1.vm.network "private_network", ip: "192.168.44.51"
+  end
+
+  # ==========================================
+  # TIER 6: MONITORING (Netdata)
+  # ==========================================
+  config.vm.define "monitor1" do |monitor1|
+    monitor1.vm.hostname = "monitor1"
+    monitor1.vm.network "private_network", ip: "192.168.44.61"
+  end
+end

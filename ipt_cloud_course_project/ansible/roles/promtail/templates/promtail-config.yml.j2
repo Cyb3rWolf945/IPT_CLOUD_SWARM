@@ -1,0 +1,43 @@
+# Promtail Configuration — managed by Ansible
+# Host: {{ inventory_hostname }} ({{ ansible_host }})
+# Tier: {{ group_names | join(', ') }}
+
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /var/lib/promtail/positions.yaml
+
+clients:
+  - url: http://192.168.44.61:3100/loki/api/v1/push
+    external_labels:
+      host: "{{ inventory_hostname }}"
+      tier: "{{ group_names | join(',') }}"
+
+scrape_configs:
+  - job_name: system
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: system
+          host: "{{ inventory_hostname }}"
+          __path__: /var/log/syslog
+      - targets:
+          - localhost
+        labels:
+          job: auth
+          host: "{{ inventory_hostname }}"
+          __path__: /var/log/auth.log
+
+  - job_name: service_logs
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: service
+          host: "{{ inventory_hostname }}"
+{% for path in promtail_log_paths %}
+          __path__: {{ path }}
+{% endfor %}

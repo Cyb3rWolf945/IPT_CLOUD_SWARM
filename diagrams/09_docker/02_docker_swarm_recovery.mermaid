@@ -1,0 +1,47 @@
+sequenceDiagram
+    participant U as 👤 User / Admin
+    participant M as Swarm Manager<br/>(Raft Consensus)
+    participant C1 as db1 Container<br/>(Patroni Primary)
+    participant C2 as db2 Container<br/>(Patroni Replica)
+    participant CON as Consul Cluster<br/>(consul1,2,3)
+    participant NG as Nginx Stream<br/>(:5000)
+
+    Note over U,NG: Initial State — Cluster Healthy
+
+    M->>M: Reconciliation loop<br/>Desired: db1=1, db2=1
+    M->>C1: Health check ✅
+    M->>C2: Health check ✅
+    M->>M: actual == desired → no action
+
+    Note over C1: 💀 docker kill db1<br/>(simulating crash)
+
+    U->>C1: docker kill db1
+    C1-->>C1: Container stops immediately
+
+    M->>M: Task db1 is DEAD<br/>actual (0) < desired (1) → DRIFT!
+
+    rect rgb(255, 200, 200)
+        Note over M: ⚡ Reconciliation triggers
+        M->>M: Schedule new db1 task
+        M->>C1: Create new db1 container<br/>(new container ID, fresh start)
+        C1->>C1: entrypoint.sh runs
+        C1->>C1: Patroni starts
+        C1->>CON: Check leader key
+        CON-->>C1: leader = db2
+        C1->>C1: Start PostgreSQL as REPLICA
+        C1->>C2: Begin streaming replication
+        M->>C1: Health check ✅
+    end
+
+    Note over C1: db1 recovered as replica<br/>⏱️ ~10-15 seconds
+
+    rect rgb(200, 255, 200)
+        Note over CON: Meanwhile — Patroni failover was already handled
+        Note over C2: db2 was promoted to primary<br/>during the ~4s Consul TTL window
+        NG->>C2: Routes DB traffic to new primary
+        Note over NG: App never experienced downtime
+    end
+
+    Note over U,NG: ✅ Cluster Self-Healed<br/>1 primary (db2) + 1 replica (db1)<br/>No human intervention needed
+
+    Note over U,NG: Compare: Phase 1 required<br/>manual vagrant up db1<br/>+ wait for VM boot (~30s)

@@ -1,0 +1,29 @@
+graph LR
+    subgraph "Web Tier"
+        WEB1[web1 Apache/PHP]
+        WEB2[web2 Apache/PHP]
+    end
+
+    subgraph "Redis Cluster (3 nodes)"
+        S1[Redis Sentinel<br/>storage1 :26379]
+        S2[Redis Sentinel<br/>storage2 :26379]
+        S3[Redis Sentinel<br/>storage3 :26379]
+
+        M[Redis Master<br/>storage3 :6379]
+        R1[Redis Replica<br/>storage1 :6379]
+        R2[Redis Replica<br/>storage2 :6379]
+
+        S1 -->|monitor| M
+        S2 -->|monitor| M
+        S3 -->|monitor| M
+        M -->|replication| R1
+        M -->|replication| R2
+        S1 <-->|quorum=2| S2
+        S2 <-->|quorum=2| S3
+        S3 <-->|quorum=2| S1
+    end
+
+    WEB1 -->|session.save_path<br/>sentinel:26379| S1
+    WEB2 -->|session.save_path<br/>sentinel:26379| S1
+    WEB1 -.->|discovered master| M
+    WEB2 -.->|discovered master| M

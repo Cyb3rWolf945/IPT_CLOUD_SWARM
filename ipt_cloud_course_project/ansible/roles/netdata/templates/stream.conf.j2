@@ -1,0 +1,23 @@
+# Netdata Streaming Configuration — managed by Ansible
+# Mode: {{ netdata_mode }}
+# Host: {{ inventory_hostname }} ({{ ansible_host }})
+
+{% if netdata_mode == "agent" %}
+# Agent: stream all metrics to the central parent (monitor1)
+[stream]
+    enabled = yes
+    destination = 192.168.44.61:19999
+    api key = netdata-monitoring-key
+    timeout seconds = 60
+    buffer size bytes = 1048576
+    reconnect delay seconds = 5
+{% endif %}
+
+{% if netdata_mode == "parent" %}
+# Parent: accept streams from all agent nodes
+[API_KEY]
+    enabled = yes
+
+[netdata-monitoring-key]
+    enabled = yes
+{% endif %}

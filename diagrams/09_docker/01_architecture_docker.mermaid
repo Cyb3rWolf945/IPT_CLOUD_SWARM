@@ -1,0 +1,112 @@
+graph TB
+    subgraph "External"
+        CLIENT[🌐 Browser / vegeta]
+    end
+
+    subgraph "Docker Swarm — Single Node"
+        MESH{{Swarm Routing Mesh<br/>ports 80, 5000, 9000, 9001, 19999, 3000, 3100}}
+
+        subgraph "Tier 1: Reverse Proxy"
+            NGINX[nginx:1.25-alpine<br/>HTTP :80 + Stream :5000]
+        end
+
+        subgraph "Tier 2: Web Application"
+            WEB1[web replica 1<br/>Apache/PHP :80]
+            WEB2[web replica 2<br/>Apache/PHP :80]
+            WS1[websocket replica 1<br/>RatchetPHP :8000]
+            WS2[websocket replica 2<br/>RatchetPHP :8000]
+        end
+
+        subgraph "Tier 3: Database HA"
+            PB1[pgbouncer1 :6432]
+            PB2[pgbouncer2 :6432]
+            DB1[(db1 Patroni+PG<br/>:5432 :8008)]
+            DB2[(db2 Patroni+PG<br/>:5432 :8008)]
+            C1[consul1<br/>:8500]
+            C2[consul2<br/>:8500]
+            C3[consul3<br/>:8500]
+        end
+
+        subgraph "Tier 4: Redis Sentinel"
+            R1[(redis1 master<br/>:6379)]
+            R2[(redis2 replica<br/>:6379)]
+            R3[(redis3 replica<br/>:6379)]
+            S1[sentinel1 :26379]
+            S2[sentinel2 :26379]
+            S3[sentinel3 :26379]
+        end
+
+        subgraph "Tier 5: Object Storage"
+            MINIO[(minio :9000<br/>:9001)]
+        end
+
+        subgraph "Tier 6: Monitoring + Logging"
+            NETDATA[netdata parent<br/>:19999]
+            LOKI[loki :3100]
+            GRAFANA[grafana :3000]
+            PROMTAIL[promtail]
+        end
+
+        subgraph "Volumes (Persistent)"
+            V_DB1[(db1_data)]
+            V_DB2[(db2_data)]
+            V_R1[(redis1_data)]
+            V_R2[(redis2_data)]
+            V_R3[(redis3_data)]
+            V_MIN[(minio_data)]
+            V_LOKI[(loki_data)]
+            V_GRAF[(grafana_data)]
+        end
+    end
+
+    CLIENT -->|HTTP :80| MESH
+    MESH --> NGINX
+
+    NGINX -->|proxy :80| WEB1
+    NGINX -->|proxy :80| WEB2
+    NGINX -->|proxy /ws/| WS1
+    NGINX -->|proxy /ws/| WS2
+    NGINX -->|stream :5000| PB1
+    NGINX -->|stream :5000| PB2
+
+    WEB1 -->|sessions| S1
+    WEB2 -->|sessions| S1
+    WS1 -->|pub/sub| R1
+    WS2 -->|pub/sub| R1
+
+    PB1 -->|pool :5432| DB1
+    PB2 -->|pool :5432| DB2
+    DB1 -.->|streaming replication| DB2
+    DB1 <-->|Consul KV| C1
+    DB2 <-->|Consul KV| C2
+    C1 --- C2
+    C2 --- C3
+    C3 --- C1
+
+    S1 -->|monitor| R1
+    S2 -->|monitor| R1
+    S3 -->|monitor| R1
+    R1 -->|replication| R2
+    R1 -->|replication| R3
+
+    WEB1 -->|s3fs / MinIO SDK| MINIO
+    WEB2 -->|s3fs / MinIO SDK| MINIO
+
+    NETDATA -.->|monitors host| MESH
+    PROMTAIL -->|push logs| LOKI
+    GRAFANA -->|query| LOKI
+
+    DB1 --- V_DB1
+    DB2 --- V_DB2
+    R1 --- V_R1
+    R2 --- V_R2
+    R3 --- V_R3
+    MINIO --- V_MIN
+    LOKI --- V_LOKI
+    GRAFANA --- V_GRAF
+
+    style MESH fill:#43a047,stroke:#2e7d32,color:#fff
+    style NGINX fill:#1565c0,stroke:#0d47a1,color:#fff
+    style C1 fill:#ff6f00,stroke:#e65100,color:#fff
+    style C2 fill:#ff6f00,stroke:#e65100,color:#fff
+    style C3 fill:#ff6f00,stroke:#e65100,color:#fff

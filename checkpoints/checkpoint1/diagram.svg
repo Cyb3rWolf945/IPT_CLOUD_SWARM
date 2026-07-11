@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700">
+  <style>
+    .box { fill:#dbeafe; stroke:#0d47a1; stroke-width:2; rx:8; }
+    .service { fill:#e3f2fd; stroke:#64b5f6; stroke-width:1.5; rx:6; }
+    .title { font:18px/1.1 Arial, Helvetica, sans-serif; fill:#0d3282; font-weight:700; }
+    .label { font:13px/1.1 Arial, Helvetica, sans-serif; fill:#1a237e; }
+    .muted { font:12px/1.1 Arial, Helvetica, sans-serif; fill:#1565c0; }
+    .arrow { stroke:#1976d2; stroke-width:2.5; fill:none; }
+    .vip { font:12px sans-serif; fill:#b91c1c; font-weight:700; }
+  </style>
+
+  <!-- Browser -->
+  <rect x="40" y="40" width="170" height="70" class="box" />
+  <text x="125" y="80" text-anchor="middle" class="title">Browser</text>
+  <text x="125" y="100" text-anchor="middle" class="muted">(Users)</text>
+
+  <!-- Load balancer + VIP -->
+  <rect x="40" y="210" width="170" height="90" class="box" />
+  <text x="125" y="245" text-anchor="middle" class="title">Load Balancer</text>
+  <text x="125" y="268" text-anchor="middle" class="label">nginx / HAProxy</text>
+  <text x="125" y="286" text-anchor="middle" class="vip">Virtual IP (VIP)</text>
+
+  <!-- Web tier group -->
+  <rect x="410" y="40" width="300" height="430" class="box" />
+  <text x="560" y="80" text-anchor="middle" class="title">Web Tier</text>
+  <text x="560" y="100" text-anchor="middle" class="muted">(horizontal scale)</text>
+  <rect x="420" y="120" width="280" height="90" class="service" />
+  <text x="560" y="165" text-anchor="middle" class="label">Web VM 1</text>
+  <text x="560" y="187" text-anchor="middle" class="muted">PHP + app files</text>
+
+  <rect x="420" y="250" width="280" height="90" class="service" />
+  <text x="560" y="295" text-anchor="middle" class="label">Web VM 2</text>
+  <text x="560" y="317" text-anchor="middle" class="muted">PHP + app files</text>
+
+  <!-- WebSocket service (optional separate) -->
+  <rect x="420" y="370" width="280" height="90" class="service" />
+  <text x="560" y="415" text-anchor="middle" class="label">WebSocket Service</text>
+  <text x="560" y="439" text-anchor="middle" class="muted">(ws.php / dedicated process)</text>
+
+  <!-- Shared services column (enveloping other service cards) -->
+  <rect x="740" y="40" width="380" height="440" class="box" />
+  <text x="930" y="75" text-anchor="middle" class="title">Shared Services</text>
+  <text x="930" y="100" text-anchor="middle" class="muted">(accessible from all web nodes)</text>
+
+  <rect x="750" y="130" width="360" height="90" class="service" />
+  <text x="930" y="175" text-anchor="middle" class="label">Shared Storage</text>
+  <text x="930" y="195" text-anchor="middle" class="muted">NFS / GlusterFS / Object Storage</text>
+
+  <rect x="750" y="230" width="360" height="90" class="service" />
+  <text x="930" y="275" text-anchor="middle" class="label">Redis</text>
+  <text x="930" y="295" text-anchor="middle" class="muted">Session store / cache</text>
+
+  <rect x="750" y="340" width="360" height="130" class="service" />
+  <text x="930" y="385" text-anchor="middle" class="label">Database Cluster</text>
+  <text x="930" y="407" text-anchor="middle" class="muted">Primary + replica (repmgr / Patroni)</text>
+
+  <!-- Arrows and connections -->
+  
+  <path d="M125 110 L125 205" class="arrow" />
+  <path d="M210 255 L420 165" class="arrow" />
+  <path d="M210 255 L420 295" class="arrow" />
+  <path d="M210 255 L420 415" class="arrow" />
+
+
+  <path d="M700 165 L740 260" class="arrow" />
+  <path d="M700 295 L740 260" class="arrow" />
+  <path d="M700 415 L740 260" class="arrow" />
+
+  <!-- Labels for important constraints -->
+  <text x="930" y="420" text-anchor="middle" class="muted">Backups, replication lag monitoring</text>
+
+  <!-- Legend -->
+  <rect x="40" y="520" width="440" height="140" rx="8" ry="8" fill="#fff" stroke="#e2e8f0" />
+  <text x="60" y="545" class="title">Legend</text>
+  <text x="60" y="570" class="label">• Load Balancer: entrypoint; HA via Keepalived</text>
+  <text x="60" y="595" class="label">• Web Tier: horizontally scalable PHP app servers</text>
+  <text x="60" y="620" class="label">• Shared Services: Redis, shared storage, and DB cluster for HA</text>
+  <text x="60" y="640" class="label">• Sessions: centralized (Redis)</text>
+
+</svg>

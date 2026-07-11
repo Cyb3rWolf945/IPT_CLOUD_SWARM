@@ -1,0 +1,252 @@
+{
+  "/home/cyb3rwolf/IPT/final_project_cloud/ipt_cloud_course_project/.vagrant/rgloader/loader.rb": {
+    "mtime": 1781184144.1556444,
+    "ast_hash": "008e15f21666184c157fb672ef817fc0",
+    "semantic_hash": "008e15f21666184c157fb672ef817fc0"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/ipt_cloud_course_project/app/composer.json": {
+    "mtime": 1781183767.0548482,
+    "ast_hash": "7b99f89d653d875897798d5ac1073a83",
+    "semantic_hash": "7b99f89d653d875897798d5ac1073a83"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/ipt_cloud_course_project/app/public_html/_dotenv.php": {
+    "mtime": 1781183767.0548482,
+    "ast_hash": "b104cd1ea7d5a7ff79d04ba691e19fab",
+    "semantic_hash": "b104cd1ea7d5a7ff79d04ba691e19fab"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/ipt_cloud_course_project/app/public_html/about.php": {
+    "mtime": 1781183767.055189,
+    "ast_hash": "fc25541e3e156c310114647554a7bbc2",
+    "semantic_hash": "fc25541e3e156c310114647554a7bbc2"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/ipt_cloud_course_project/app/public_html/db.php": {
+    "mtime": 1781183767.0558686,
+    "ast_hash": "e2281bf92a5fc8a0f7a496ac6fe830d6",
+    "semantic_hash": "e2281bf92a5fc8a0f7a496ac6fe830d6"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/ipt_cloud_course_project/app/public_html/index.php": {
+    "mtime": 1781183767.0565636,
+    "ast_hash": "635546633bac39b0514c317ab2ca5b70",
+    "semantic_hash": "635546633bac39b0514c317ab2ca5b70"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/ipt_cloud_course_project/app/public_html/js/bootstrap.bundle.min.js": {
+    "mtime": 1781183767.0568485,
+    "ast_hash": "2e477967e482f32e65d4ea9b2fd8e106",
+    "semantic_hash": "2e477967e482f32e65d4ea9b2fd8e106"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/ipt_cloud_course_project/app/public_html/js/moment.min.js": {
+    "mtime": 1781183767.0578487,
+    "ast_hash": "6c0a2330b0d8d6ea185d4669a0eddeab",
+    "semantic_hash": "6c0a2330b0d8d6ea185d4669a0eddeab"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/ipt_cloud_course_project/app/public_html/js/websockets.js": {
+    "mtime": 1781183767.0578487,
+    "ast_hash": "56541cbf163b124fc1ef334fe39c1612",
+    "semantic_hash": "56541cbf163b124fc1ef334fe39c1612"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/ipt_cloud_course_project/app/public_html/partials/footer.php": {
+    "mtime": 1781183767.0578487,
+    "ast_hash": "048a2babe31fbabc9ee61961df8fd970",
+    "semantic_hash": "048a2babe31fbabc9ee61961df8fd970"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/ipt_cloud_course_project/app/public_html/partials/navbar.php": {
+    "mtime": 1781183767.0586054,
+    "ast_hash": "f70ad94b80bd84d387e26feb41f679f4",
+    "semantic_hash": "f70ad94b80bd84d387e26feb41f679f4"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/ipt_cloud_course_project/app/public_html/phpinfo.php": {
+    "mtime": 1781183767.0586054,
+    "ast_hash": "1df87c8965b0b87f4c807f9433403d19",
+    "semantic_hash": "1df87c8965b0b87f4c807f9433403d19"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/ipt_cloud_course_project/app/public_html/phpinfo_content.php": {
+    "mtime": 1781183767.0586054,
+    "ast_hash": "5e538b66c89659911717ca1a9ee930a4",
+    "semantic_hash": "5e538b66c89659911717ca1a9ee930a4"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/ipt_cloud_course_project/app/public_html/sessions.php": {
+    "mtime": 1781183767.0586054,
+    "ast_hash": "bd06f17c28a5bb8b76fd928b17c65168",
+    "semantic_hash": "bd06f17c28a5bb8b76fd928b17c65168"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/ipt_cloud_course_project/app/public_html/upload.php": {
+    "mtime": 1781183767.0586054,
+    "ast_hash": "5446ffcca8041307590b02e16a648c95",
+    "semantic_hash": "5446ffcca8041307590b02e16a648c95"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/ipt_cloud_course_project/app/public_html/websockets.php": {
+    "mtime": 1781183767.0586054,
+    "ast_hash": "1109b432bedeb091dd5f9909f577206b",
+    "semantic_hash": "1109b432bedeb091dd5f9909f577206b"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/ipt_cloud_course_project/provision/dump.sql": {
+    "mtime": 1781183767.0586054,
+    "ast_hash": "02b3b9f15a5821413ed6498800439f06",
+    "semantic_hash": "02b3b9f15a5821413ed6498800439f06"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/ipt_cloud_course_project/provision/web.sh": {
+    "mtime": 1781183767.0588815,
+    "ast_hash": "71615a63c9b752a9f785716f3ecea76e",
+    "semantic_hash": "71615a63c9b752a9f785716f3ecea76e"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/ipt_cloud_course_project/ws/composer.json": {
+    "mtime": 1781183767.0588815,
+    "ast_hash": "ee427e1e78810d8ee0696aaa305d66fd",
+    "semantic_hash": "ee427e1e78810d8ee0696aaa305d66fd"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/ipt_cloud_course_project/ws/websockets_server.php": {
+    "mtime": 1781183767.0590308,
+    "ast_hash": "409d2b6fb7d133adf74a22fcc4b6a39e",
+    "semantic_hash": "409d2b6fb7d133adf74a22fcc4b6a39e"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/ipt_cloud_course_project/README.md": {
+    "mtime": 1781183767.053214,
+    "ast_hash": "250f5fbad33acc60100a58a47b3bac0b",
+    "semantic_hash": "250f5fbad33acc60100a58a47b3bac0b"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/ipt_cloud_course_project/ansible/roles/common/tasks/main.yml": {
+    "mtime": 1781183767.053459,
+    "ast_hash": "2a9071a948e24fbd94cdc0741d95b31a",
+    "semantic_hash": "2a9071a948e24fbd94cdc0741d95b31a"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/ipt_cloud_course_project/ansible/roles/consul/handlers/main.yml": {
+    "mtime": 1782074404.5970974,
+    "ast_hash": "e0fdf7be6513011d10a75dc6c5dde5d1",
+    "semantic_hash": "e0fdf7be6513011d10a75dc6c5dde5d1"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/ipt_cloud_course_project/ansible/roles/consul/tasks/main.yml": {
+    "mtime": 1782074404.5970974,
+    "ast_hash": "cd848e8657d05b14dde87c825660d573",
+    "semantic_hash": "cd848e8657d05b14dde87c825660d573"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/ipt_cloud_course_project/ansible/roles/haproxy/handlers/main.yml": {
+    "mtime": 1781183767.0538483,
+    "ast_hash": "cc20ab945fa6d21b180bb648650cc931",
+    "semantic_hash": "cc20ab945fa6d21b180bb648650cc931"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/ipt_cloud_course_project/ansible/roles/haproxy/tasks/main.yml": {
+    "mtime": 1781183767.0538483,
+    "ast_hash": "57e1920ae2c81646b123e1ec97d00c60",
+    "semantic_hash": "57e1920ae2c81646b123e1ec97d00c60"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/ipt_cloud_course_project/ansible/roles/keepalived/handlers/main.yml": {
+    "mtime": 1781183767.0541363,
+    "ast_hash": "7d485e4ba42120d950cf7bde1ed6e808",
+    "semantic_hash": "7d485e4ba42120d950cf7bde1ed6e808"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/ipt_cloud_course_project/ansible/roles/keepalived/tasks/main.yml": {
+    "mtime": 1781183767.0541363,
+    "ast_hash": "c598d962feea5cdea6d9281b58e6f288",
+    "semantic_hash": "c598d962feea5cdea6d9281b58e6f288"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/ipt_cloud_course_project/ansible/roles/minio/tasks/main.yml": {
+    "mtime": 1782074404.5981395,
+    "ast_hash": "48e4c25f3f17a40c5a0a20024d85d8c6",
+    "semantic_hash": "48e4c25f3f17a40c5a0a20024d85d8c6"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/ipt_cloud_course_project/ansible/roles/nginx/handlers/main.yml": {
+    "mtime": 1781183767.0543337,
+    "ast_hash": "4e40fe69af7b16cf7bd4b97ec54fdb7a",
+    "semantic_hash": "4e40fe69af7b16cf7bd4b97ec54fdb7a"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/ipt_cloud_course_project/ansible/roles/nginx/tasks/main.yml": {
+    "mtime": 1781183767.0543337,
+    "ast_hash": "ece8b2db3e1cfd3978bf48438968e9a2",
+    "semantic_hash": "ece8b2db3e1cfd3978bf48438968e9a2"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/ipt_cloud_course_project/ansible/roles/patroni/handlers/main.yml": {
+    "mtime": 1782074404.5983489,
+    "ast_hash": "3b519dc202dcad65477516d7b69b6257",
+    "semantic_hash": "3b519dc202dcad65477516d7b69b6257"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/ipt_cloud_course_project/ansible/roles/patroni/tasks/main.yml": {
+    "mtime": 1782074404.5984302,
+    "ast_hash": "d12d2897b20d5d6236c6576b5c4e5527",
+    "semantic_hash": "d12d2897b20d5d6236c6576b5c4e5527"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/ipt_cloud_course_project/ansible/roles/postgres/handlers/main.yml": {
+    "mtime": 1781183767.0545242,
+    "ast_hash": "e5c17e2ec2562e629bb022734a68fcc9",
+    "semantic_hash": "e5c17e2ec2562e629bb022734a68fcc9"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/ipt_cloud_course_project/ansible/roles/postgres/tasks/main.yml": {
+    "mtime": 1782074404.5985894,
+    "ast_hash": "507b2a1ddbd2a9c1a26e7b28dd80d788",
+    "semantic_hash": "507b2a1ddbd2a9c1a26e7b28dd80d788"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/ipt_cloud_course_project/ansible/roles/redis/handlers/main.yml": {
+    "mtime": 1782074404.5988069,
+    "ast_hash": "9c77df4aa6fa13e4d45edd3be29f57a4",
+    "semantic_hash": "9c77df4aa6fa13e4d45edd3be29f57a4"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/ipt_cloud_course_project/ansible/roles/redis/tasks/main.yml": {
+    "mtime": 1782074404.5988944,
+    "ast_hash": "ffc00ad90ad091a7ff7d54248ec3d6ba",
+    "semantic_hash": "ffc00ad90ad091a7ff7d54248ec3d6ba"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/ipt_cloud_course_project/ansible/roles/webserver/handlers/main.yml": {
+    "mtime": 1781183767.05468,
+    "ast_hash": "8eb77df79505aada0220bd07ae789239",
+    "semantic_hash": "8eb77df79505aada0220bd07ae789239"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/ipt_cloud_course_project/ansible/roles/webserver/tasks/main.yml": {
+    "mtime": 1782074404.5988944,
+    "ast_hash": "243723a5cdb43f471c255ceeb41bf46f",
+    "semantic_hash": "243723a5cdb43f471c255ceeb41bf46f"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/ipt_cloud_course_project/ansible/site.yml": {
+    "mtime": 1782074404.5988944,
+    "ast_hash": "707780625d70d2677df7b9bfc795e647",
+    "semantic_hash": "707780625d70d2677df7b9bfc795e647"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/checkpoint1/checkpoint1.pdf": {
+    "mtime": 1781183767.0498478,
+    "ast_hash": "5332f044b9c80a504187037177cc06f5",
+    "semantic_hash": "5332f044b9c80a504187037177cc06f5"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/cnv-final-project-2026-v2.pdf": {
+    "mtime": 1781183767.051848,
+    "ast_hash": "fdb4b7b659c85662d7506b6b1f9b0762",
+    "semantic_hash": "fdb4b7b659c85662d7506b6b1f9b0762"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/cnv-final-project-2026.pdf": {
+    "mtime": 1781183767.052848,
+    "ast_hash": "045f6003179f1b269c27a5a0c9f7349a",
+    "semantic_hash": "045f6003179f1b269c27a5a0c9f7349a"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/checkpoint1/diagram.png": {
+    "mtime": 1781183767.051848,
+    "ast_hash": "bd511cd4e989cf7da3ee8032c6a7e860",
+    "semantic_hash": "bd511cd4e989cf7da3ee8032c6a7e860"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/checkpoint1/diagram.svg": {
+    "mtime": 1781183767.051848,
+    "ast_hash": "23178da8c91e4991ada5b2a2d96f1bca",
+    "semantic_hash": "23178da8c91e4991ada5b2a2d96f1bca"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/checkpoint1/diagram_original.png": {
+    "mtime": 1781183767.051848,
+    "ast_hash": "4a4fa5f7605e901ec7d49bb1dab4a38b",
+    "semantic_hash": "4a4fa5f7605e901ec7d49bb1dab4a38b"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/checkpoint1/diagram_original.svg": {
+    "mtime": 1781183767.051848,
+    "ast_hash": "c534e08856fac4d6d19aff589e622758",
+    "semantic_hash": "c534e08856fac4d6d19aff589e622758"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/ipt_cloud_course_project/app/public_html/gallery/capa_Tnicho.jpg": {
+    "mtime": 1781183767.0558686,
+    "ast_hash": "4c5eceee3ac3cb9c10a2bcee7d862ca1",
+    "semantic_hash": "4c5eceee3ac3cb9c10a2bcee7d862ca1"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/ipt_cloud_course_project/app/public_html/gallery/images.jpg": {
+    "mtime": 1781183767.0565636,
+    "ast_hash": "ccb2203c136f8dffbbecf61bf47a3a2a",
+    "semantic_hash": "ccb2203c136f8dffbbecf61bf47a3a2a"
+  },
+  "/home/cyb3rwolf/IPT/final_project_cloud/ipt_cloud_course_project/app/public_html/img/ipt.png": {
+    "mtime": 1781183767.0565636,
+    "ast_hash": "6e63acb76b4d028925a065f87b53a87c",
+    "semantic_hash": "6e63acb76b4d028925a065f87b53a87c"
+  }
+}

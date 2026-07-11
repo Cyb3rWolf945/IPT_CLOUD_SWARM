@@ -1,0 +1,56 @@
+sequenceDiagram
+    participant V as vegeta<br/>10 req/s × 60s
+    participant N as Nginx :80
+    participant W as Web (PHP)
+    participant NS as Nginx Stream :5000
+    participant PB as PgBouncer
+    participant DB1 as db1 (PRIMARY) ❌
+    participant DB2 as db2 (REPLICA)
+    participant C as Consul Cluster
+
+    Note over V,DB2: Starting failover test — db1 is primary
+
+    V->>N: GET /db.php (steady 10/s)
+    N->>W: proxy
+    W->>NS: DB connect nginx:5000
+    NS->>PB: TCP route
+    PB->>DB1: query → ✅ response
+    DB1-->>W: result → 200 OK
+    V-->>V: Latency: ~7ms
+
+    Note over DB1: ⏰ T+10s — docker kill db1
+
+    DB1-->>DB1: 💀 Container killed (SIGKILL)
+
+    rect rgb(255, 230, 200)
+        Note over C,DB2: Failover window (~4-8s)
+        C->>C: db1 Consul session expires
+        DB2->>C: Acquire leader lock
+        DB2->>DB2: 🚀 PROMOTE to primary
+
+        V->>N: GET /db.php (during failover)
+        N->>W: proxy
+        W->>NS: DB connect nginx:5000
+        NS->>PB: TCP route → db1 is DOWN
+        NS->>PB: retry → db2 is now PRIMARY
+        PB->>DB2: query → ✅ response
+        DB2-->>W: result → 200 OK
+        V-->>V: Latency: ~8ms
+    end
+
+    rect rgb(255, 200, 200)
+        Note over V: ⚠️ One request times out
+        V->>N: GET /db.php
+        W->>NS: DB connect nginx:5000
+        Note over NS: Connection refused / timeout
+        W-->>V: ❌ 10s timeout
+    end
+
+    Note over DB2: ✅ db2 is now PRIMARY<br/>All subsequent requests succeed
+
+    V->>N: GET /db.php (remaining 40s)
+    N->>W: proxy → DB2 → ✅
+
+    Note over V,DB2: 📊 Result: 599/600 (99.83%)<br/>1 timeout during ~8s failover window
+
+    Note over DB1: 🔄 db1 manually restarted<br/>Patroni auto-rejoined as REPLICA<br/>Streaming replication from db2

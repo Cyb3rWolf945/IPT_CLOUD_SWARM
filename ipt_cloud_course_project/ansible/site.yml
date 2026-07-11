@@ -1,0 +1,114 @@
+---
+- hosts: all
+  become: yes
+  roles:
+    - common
+
+- hosts: loadbalancers
+  become: yes
+  roles:
+    - keepalived
+    - nginx
+    - haproxy
+
+- hosts: webservers
+  become: yes
+  roles:
+    - webserver
+    - websocket
+
+- hosts: databases
+  become: yes
+  roles:
+    - postgres
+    - consul
+    - patroni
+    - pgbouncer
+
+- hosts: redis_cluster
+  become: yes
+  roles:
+    - redis
+    - redis_sentinel
+
+- hosts: minio
+  become: yes
+  roles:
+    - minio
+
+- hosts: all
+  become: yes
+  vars:
+    netdata_mode: agent
+  roles:
+    - netdata
+
+- hosts: monitoring
+  become: yes
+  vars:
+    netdata_mode: parent
+  roles:
+    - netdata
+
+# ==========================================
+# PHASE 8: LOGGING STACK — Loki + Grafana + Promtail
+# ==========================================
+
+- hosts: monitoring
+  become: yes
+  roles:
+    - loki
+    - grafana
+
+- hosts: loadbalancers
+  become: yes
+  vars:
+    promtail_log_paths:
+      - /var/log/nginx/access.log
+      - /var/log/nginx/error.log
+  roles:
+    - promtail
+
+- hosts: webservers
+  become: yes
+  vars:
+    promtail_log_paths:
+      - /var/log/apache2/access.log
+      - /var/log/apache2/error.log
+  roles:
+    - promtail
+
+- hosts: databases
+  become: yes
+  vars:
+    promtail_log_paths:
+      - /var/log/postgresql/postgresql-14-main.log
+  roles:
+    - promtail
+
+- hosts: redis_cluster
+  become: yes
+  vars:
+    promtail_log_paths:
+      - /var/log/redis/redis-server.log
+      - /var/log/redis/redis-sentinel.log
+  roles:
+    - promtail
+
+- hosts: minio
+  become: yes
+  vars:
+    promtail_log_paths:
+      - /var/log/minio/minio.log
+  roles:
+    - promtail
+
+- hosts: monitoring
+  become: yes
+  vars:
+    promtail_log_paths:
+      - /var/log/netdata/*.log
+      - /var/log/grafana/grafana.log
+      - /var/log/loki/loki.log
+  roles:
+    - promtail

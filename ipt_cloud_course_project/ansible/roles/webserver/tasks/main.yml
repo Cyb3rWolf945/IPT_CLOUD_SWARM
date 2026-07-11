@@ -1,0 +1,111 @@
+---
+- name: Instalar Apache e dependencias PHP
+  apt:
+    name: 
+      - apache2
+      - php
+      - libapache2-mod-php
+      - php-pgsql
+      - php-xml
+      - php-curl
+    state: present
+
+- name: Apagar o index.html padrao do Apache
+  file:
+    path: /var/www/html/index.html
+    state: absent
+
+
+
+- name: Configurar VirtualHost do Apache
+  template:
+    src: apache.conf.j2
+    dest: /etc/apache2/sites-available/000-default.conf
+  notify: restart apache
+
+- name: Ativar mod_rewrite do Apache
+  apache2_module:
+    name: rewrite
+    state: present
+  notify: restart apache
+
+- name: Garantir que o Apache está a correr
+  service:
+    name: apache2
+    state: started
+    enabled: yes
+
+- name: Adicionar hostname minio ao /etc/hosts (para o PHP conseguir resolver no Vagrant)
+  lineinfile:
+    path: /etc/hosts
+    line: "192.168.44.51 minio"
+    state: present
+
+- name: Instalar a extensao PHP para o Redis
+  apt:
+    name: php-redis
+    state: present
+  notify: restart apache
+
+- name: Configurar PHP para usar o Redis como gestor de sessoes
+  lineinfile:
+    path: /etc/php/8.1/apache2/php.ini
+    regexp: '^session.save_handler ='
+    line: 'session.save_handler = redis'
+  notify: restart apache
+
+- name: Apontar as sessoes para o Redis master (descoberto via Sentinel)
+  lineinfile:
+    path: /etc/php/8.1/apache2/php.ini
+    regexp: '^;?session.save_path ='
+    line: 'session.save_path = "tcp://192.168.44.10:6379?auth=redispass"'
+  notify: restart apache
+
+- name: Instalar o s3fs para o Nginx/Apache
+  apt:
+    name: s3fs
+    state: present
+
+- name: Configurar credenciais de acesso ao MinIO
+  copy:
+    dest: /etc/passwd-s3fs
+    content: "admin:ipt_cloud_2026"
+    mode: '0600'
+
+- name: Garantir que a pasta local da galeria esta vazia antes de montar
+  file:
+    path: /var/www/html/public_html/gallery/
+    state: directory
+
+- name: Montar o bucket MinIO na pasta da Galeria
+  mount:
+    path: /var/www/html/public_html/gallery
+    src: gallery
+    fstype: fuse.s3fs
+    # O use_path_request_style é obrigatorio para MinIO!
+    opts: _netdev,allow_other,use_path_request_style,url=http://192.168.44.51:9000,passwd_file=/etc/passwd-s3fs,uid=33,gid=33,nonempty
+    state: mounted
+
+- name: Permitir allow_other no FUSE (Muito importante para o Apache escrever)
+  lineinfile:
+    path: /etc/fuse.conf
+    regexp: '^#?user_allow_other'
+    line: 'user_allow_other'
+
+- name: Configurar ficheiro .env com ligacao a DB (via HAProxy no VIP)
+  template:
+    src: .env.j2
+    dest: /var/www/html/.env
+    owner: www-data
+    group: www-data
+    mode: '0644'
+  become: yes
+  run_once: true
+
+- name: Instalar dependências da App via Composer (nativo /opt/app)
+  shell: |
+    mkdir -p /opt/app
+    cp /var/www/html/composer.json /opt/app/
+    cd /opt/app
+    composer install --no-dev --no-interaction
+  become: yes

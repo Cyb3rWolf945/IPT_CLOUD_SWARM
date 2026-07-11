@@ -1,0 +1,52 @@
+---
+- name: Fazer download do servidor MinIO
+  get_url:
+    url: https://dl.min.io/server/minio/release/linux-amd64/minio
+    dest: /usr/local/bin/minio
+    mode: '0755'
+
+- name: Criar pasta de dados do MinIO
+  file:
+    path: /data/minio
+    state: directory
+    owner: vagrant
+
+- name: Criar ficheiro Systemd para o MinIO
+  copy:
+    dest: /etc/systemd/system/minio.service
+    content: |
+      [Unit]
+      Description=MinIO
+      Wants=network-online.target
+
+      [Service]
+      Environment="MINIO_ROOT_USER=admin"
+      Environment="MINIO_ROOT_PASSWORD=ipt_cloud_2026"
+      ExecStart=/usr/local/bin/minio server /data/minio --console-address ":9001"
+      Restart=always
+      LimitNOFILE=65536
+
+      [Install]
+      WantedBy=multi-user.target
+
+- name: Iniciar e ativar o servico MinIO
+  systemd:
+    name: minio
+    state: started
+    enabled: yes
+    daemon_reload: yes
+
+- name: Fazer download do MinIO Client (mc)
+  get_url:
+    url: https://dl.min.io/client/mc/release/linux-amd64/mc
+    dest: /usr/local/bin/mc
+    mode: '0755'
+
+- name: Configurar o mc para ligar ao MinIO local
+  command: mc alias set myminio http://127.0.0.1:9000 admin ipt_cloud_2026
+  register: mc_setup
+  changed_when: false
+
+- name: Criar o bucket 'gallery' (Ignora erro se ja existir)
+  command: mc mb myminio/gallery
+  ignore_errors: yes

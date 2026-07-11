@@ -1,0 +1,11 @@
+graph LR
+    V[🌐 vegeta] -->|HTTP :80| VIP[192.168.44.10 VIP]
+    VIP -->|Keepalived| LB1[lb1 Nginx]
+    VIP -->|Keepalived| LB2[lb2 Nginx]
+    LB1 -->|proxy| WEB1[web1 Apache/PHP]
+    LB2 -->|proxy| WEB2[web2 Apache/PHP]
+    WEB1 -->|DB :5000| HAP[HAProxy]
+    WEB2 -->|DB :5000| HAP
+    HAP -->|:5432| DB1[db1 Patroni/PostgreSQL]
+    HAP -->|:5432| DB2[db2 Patroni/PostgreSQL]
+    DB1 <-->|Consul| DB2

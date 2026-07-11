@@ -1,0 +1,116 @@
+---
+# 1. Instalar dependências
+- name: Instalar dependências base
+  apt:
+    name:
+      - python3-pip
+      - python3-psycopg2
+      - libpq-dev
+      - gcc
+      - postgresql
+    state: present
+
+# 2. Impedir que o Postgres clássico arranque
+- name: Garantir que o serviço PostgreSQL não arranca automaticamente
+  service:
+    name: postgresql
+    state: stopped
+    enabled: no
+
+# 3. Instalar Patroni com suporte a Consul
+- name: Instalar Patroni com suporte a Consul via pip
+  pip:
+    name: "patroni[consul]"
+    state: latest
+
+# 4. Criar diretório de dados
+- name: Garantir diretório de dados do Postgres
+  file:
+    path: /var/lib/postgresql/data
+    state: directory
+    owner: postgres
+    group: postgres
+    mode: '0700'
+
+# 5. Criar ficheiro de configuração
+- name: Criar ficheiro de configuração do Patroni
+  template:
+    src: patroni.yml.j2
+    dest: /etc/patroni.yml
+  notify: restart patroni
+
+# 6. CRIAÇÃO DO FICHEIRO DE SERVIÇO (Este é o que estavas a perguntar)
+- name: Criar ficheiro de serviço systemd para o Patroni
+  template:
+    src: patroni.service.j2
+    dest: /etc/systemd/system/patroni.service
+  notify: restart patroni
+
+# 7. Iniciar o serviço
+- name: Iniciar e ativar o serviço Patroni
+  systemd:
+    name: patroni
+    state: started
+    enabled: yes
+    daemon_reload: yes
+
+# 8. Criar BD e Tabelas no Patroni (Apenas no Master)
+- name: Forçar reinício do Patroni se a configuração tiver mudado
+  meta: flush_handlers
+
+- name: Esperar 15 segundos para o cluster Patroni estabilizar
+  pause:
+    seconds: 15
+  run_once: true
+
+- name: Verificar se esta maquina e o Master do Patroni
+  uri:
+    url: http://127.0.0.1:8008/primary
+    status_code: 200, 503
+  register: patroni_master
+
+- name: Instalar dependência para postgresql_query
+  pip:
+    name: psycopg2-binary
+    state: present
+  when: patroni_master.status == 200
+
+- name: Garantir que o utilizador app_user existe
+  postgresql_user:
+    name: app_user
+    password: app_password
+    port: 5432
+  become_user: postgres
+  when: patroni_master.status == 200
+
+- name: Criar a base de dados do projeto no Patroni
+  postgresql_db:
+    name: project_o
+    port: 5432
+  become_user: postgres
+  when: patroni_master.status == 200
+
+- name: Atribuir privilégios totais na base de dados
+  postgresql_privs:
+    database: project_o
+    role: app_user
+    type: database
+    privs: ALL
+    port: 5432
+  become_user: postgres
+  when: patroni_master.status == 200
+
+- name: Criar a tabela messages e dar permissões ao utilizador
+  postgresql_query:
+    db: project_o
+    port: 5432
+    query: |
+      CREATE TABLE IF NOT EXISTS messages (
+          id SERIAL PRIMARY KEY,
+          message TEXT NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+      ALTER TABLE messages OWNER TO app_user;
+      ALTER USER app_user WITH PASSWORD 'app_password';
+  become_user: postgres
+  when: patroni_master.status == 200

@@ -1,0 +1,37 @@
+---
+- name: Download Netdata kickstart script
+  get_url:
+    url: https://get.netdata.cloud/kickstart.sh
+    dest: /tmp/kickstart.sh
+    mode: '0755'
+
+- name: Install Netdata (agent or parent)
+  shell: |
+    bash /tmp/kickstart.sh --non-interactive --claim-token ipt_cloud_2026 --claim-url http://192.168.44.61:19999
+  args:
+    creates: /usr/sbin/netdata
+  when: netdata_mode == "agent" or netdata_mode == "parent"
+
+- name: Configure Netdata main config
+  template:
+    src: netdata.conf.j2
+    dest: /etc/netdata/netdata.conf
+    owner: netdata
+    group: netdata
+    mode: '0644'
+  notify: restart netdata
+
+- name: Configure streaming (agents → parent)
+  template:
+    src: stream.conf.j2
+    dest: /etc/netdata/stream.conf
+    owner: netdata
+    group: netdata
+    mode: '0644'
+  notify: restart netdata
+
+- name: Ensure Netdata is running and enabled
+  service:
+    name: netdata
+    state: started
+    enabled: yes

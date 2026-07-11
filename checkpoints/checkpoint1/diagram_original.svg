@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="420" viewBox="0 0 1000 420">
+  <style>
+    .box { fill:#f1f5f9; stroke:#0d47a1; stroke-width:2; rx:8; }
+    .service { fill:#fff; stroke:#1976d2; stroke-width:1.5; rx:6; }
+    .title { font:18px/1.1 Arial, Helvetica, sans-serif; fill:#0d3282; font-weight:700; }
+    .label { font:13px/1.1 Arial, Helvetica, sans-serif; fill:#1a237e; }
+    .muted { font:12px/1.1 Arial, Helvetica, sans-serif; fill:#1565c0; }
+    .arrow { stroke:#1976d2; stroke-width:2.5; fill:none; }
+  </style>
+
+  <!-- Browser -->
+  <rect x="40" y="40" width="160" height="70" class="box" />
+  <text x="120" y="67" text-anchor="middle" class="title">Browser</text>
+  <text x="120" y="83" text-anchor="middle" class="muted">(Users)</text>
+
+  <!-- Single Web VM -->
+  <rect x="260" y="40" width="300" height="160" class="service" />
+  <text x="410" y="104" text-anchor="middle" class="title">Web VM (single)</text>
+  <text x="410" y="120" text-anchor="middle" class="label">PHP app + uploads on local disk</text>
+  <text x="410" y="136" text-anchor="middle" class="label">WebSocket endpoint (in‑VM)</text>
+
+  <!-- Database -->
+  <rect x="620" y="40" width="220" height="120" class="service" />
+  <text x="730" y="92" text-anchor="middle" class="title">Database</text>
+  <text x="730" y="108" text-anchor="middle" class="label">Postgres (single instance)</text>
+
+  <!-- Arrows -->
+  <path d="M200 75 L260 120" class="arrow" />
+  <path d="M560 83 L620 100" class="arrow" />
+
+  <!-- Notes removed (text moved inside cards) -->
+
+  <!-- Legend -->
+  <rect x="40" y="230" width="800" height="140" rx="8" ry="8" fill="#fff" stroke="#e2e8f0" />
+  <text x="60" y="255" class="title">Legend</text>
+  <text x="60" y="280" class="label">• Monolithic: single web VM with integrated WebSocket and local storage</text>
+  <text x="60" y="305" class="label">• Database: single instance (no replication)</text>
+</svg>

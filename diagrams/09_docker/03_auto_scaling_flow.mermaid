@@ -1,0 +1,52 @@
+sequenceDiagram
+    participant W as Web Containers<br/>(2 replicas)
+    participant D as Docker Stats API<br/>/containers/{id}/stats
+    participant MON as Auto-Scale Monitor<br/>(bash/Python script)
+    participant M as Swarm Manager
+    participant LB as Swarm Routing Mesh
+
+    Note over W,LB: Normal operation — 2 replicas, ~35% CPU
+
+    loop Every 10 seconds
+        D->>MON: CPU: web-replica-1=32%<br/>web-replica-2=38%<br/>Avg: 35%
+        MON->>MON: 35% < 80% threshold<br/>→ no action
+    end
+
+    Note over W: 📈 Traffic spike!<br/>vegeta attack 500 req/s
+
+    D->>MON: CPU: web-replica-1=85%<br/>web-replica-2=79%<br/>Avg: 82% ⚠️
+
+    rect rgb(255, 230, 200)
+        MON->>MON: CPU avg 82% > 80%!<br/>Breach count: 1/2
+        Note over MON: Need 2 consecutive breaches<br/>to avoid false positives
+
+        D->>MON: CPU: web-replica-1=91%<br/>web-replica-2=87%<br/>Avg: 89% 🔴
+        MON->>MON: CPU avg 89% > 80%<br/>Breach count: 2/2 → TRIGGER!
+    end
+
+    rect rgb(200, 255, 200)
+        MON->>M: docker service scale<br/>ipt_cloud_web=4
+        M->>M: Schedule 2 new tasks<br/>(replicas 3 and 4)
+        M->>W: Start 2 new containers<br/>(image: ipt_cloud/php-app)
+        W->>W: Containers start (~2s each)
+        M->>LB: Register new replicas<br/>in routing mesh
+    end
+
+    Note over W,LB: ⏱️ ~5 seconds from threshold<br/>to 4 running replicas
+
+    LB->>LB: Load distributes across<br/>all 4 replicas
+
+    loop Every 10 seconds
+        D->>MON: CPU: 4 replicas<br/>~22% each, Avg: 22%
+        MON->>MON: CPU 22% < 80% → OK
+    end
+
+    Note over MON: Later — traffic subsides
+    D->>MON: CPU avg: 12% (low)
+    MON->>MON: 12% < 40% (scale-down threshold)
+    MON->>M: docker service scale<br/>ipt_cloud_web=2
+    M->>M: Remove 2 replicas<br/>(graceful stop)
+
+    Note over W,LB: ✅ Auto-scaling complete<br/>Back to baseline: 2 replicas
+
+    Note over MON: Phase 1 equivalent:<br/>vagrant up web3 + vagrant up web4<br/>→ ~5 minutes vs ~5 seconds

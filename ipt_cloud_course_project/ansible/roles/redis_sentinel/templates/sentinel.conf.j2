@@ -1,0 +1,13 @@
+# Redis Sentinel configuration — managed by Ansible
+# Monitors the Redis master at 192.168.44.41:6379
+
+sentinel monitor mymaster 192.168.44.41 6379 2
+sentinel down-after-milliseconds mymaster 5000
+sentinel failover-timeout mymaster 30000
+sentinel parallel-syncs mymaster 1
+
+sentinel auth-pass mymaster redispass
+
+bind 0.0.0.0
+port 26379
+logfile /var/log/redis/sentinel.log

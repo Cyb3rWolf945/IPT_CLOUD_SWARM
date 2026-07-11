@@ -1,0 +1,74 @@
+graph LR
+    subgraph "External"
+        V[🌐 vegeta / Browser] -->|HTTP :80| VIP[192.168.44.10 VIP]
+    end
+
+    subgraph "Load Balancers"
+        VIP -->|Keepalived VRRP| LB1[lb1 Nginx + HAProxy]
+        VIP -->|Keepalived VRRP| LB2[lb2 Nginx + HAProxy]
+    end
+
+    subgraph "Web Tier"
+        LB1 -->|proxy :80| WEB1[web1 Apache/PHP + Ratchet :8000]
+        LB2 -->|proxy :80| WEB2[web2 Apache/PHP + Ratchet :8000]
+    end
+
+    subgraph "Database Tier"
+        WEB1 -->|DB :5000| HAP[HAProxy :5000]
+        WEB2 -->|DB :5000| HAP
+        HAP -->|:6432| PB1[PgBouncer db1]
+        HAP -->|:6432| PB2[PgBouncer db2]
+        PB1 -->|pool :5432| PG1[(PostgreSQL db1)]
+        PB2 -->|pool :5432| PG2[(PostgreSQL db2)]
+        PG2 -.->|streaming replication| PG1
+        PG1 <-->|Consul KV| PG2
+    end
+
+    subgraph "Redis Sentinel Cluster"
+        WEB1 -->|sessions| S1[Sentinel storage1]
+        WEB2 -->|sessions| S1
+        S1 -->|monitor| RM[(Redis Master storage3)]
+        S2[Sentinel storage2] -->|monitor| RM
+        S3[Sentinel storage3] -->|monitor| RM
+        RM -->|replication| RR1[(Redis Replica storage1)]
+        RM -->|replication| RR2[(Redis Replica storage2)]
+    end
+
+    subgraph "Object Storage"
+        WEB1 -->|s3fs| MINIO[minio1 MinIO :9000]
+        WEB2 -->|s3fs| MINIO
+    end
+
+    subgraph "Monitoring & Logging"
+        MONITOR[monitor1<br/>Netdata Parent :19999<br/>Loki :3100<br/>Grafana :3000]
+    end
+
+    WEB1 -.->|stream metrics :19999| MONITOR
+    WEB2 -.->|stream metrics :19999| MONITOR
+    LB1 -.->|stream metrics :19999| MONITOR
+    LB2 -.->|stream metrics :19999| MONITOR
+    PG1 -.->|stream metrics :19999| MONITOR
+    PG2 -.->|stream metrics :19999| MONITOR
+    RM -.->|stream metrics :19999| MONITOR
+    RR1 -.->|stream metrics :19999| MONITOR
+    RR2 -.->|stream metrics :19999| MONITOR
+    MINIO -.->|stream metrics :19999| MONITOR
+
+    LB1 -.->|log push :3100| MONITOR
+    LB2 -.->|log push :3100| MONITOR
+    WEB1 -.->|log push :3100| MONITOR
+    WEB2 -.->|log push :3100| MONITOR
+    PG1 -.->|log push :3100| MONITOR
+    PG2 -.->|log push :3100| MONITOR
+    RM -.->|log push :3100| MONITOR
+    RR1 -.->|log push :3100| MONITOR
+    RR2 -.->|log push :3100| MONITOR
+    MINIO -.->|log push :3100| MONITOR
+
+    MONITOR -->|Grafana :3000| GRAF[📊 Grafana Dashboard]
+    MONITOR -->|Netdata :19999| NET[📈 Netdata Dashboard]
+
+    style MONITOR fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style V fill:#2196F3,stroke:#1565C0,color:#fff
+    style GRAF fill:#F46800,stroke:#CC5500,color:#fff
+    style NET fill:#00AB44,stroke:#008833,color:#fff

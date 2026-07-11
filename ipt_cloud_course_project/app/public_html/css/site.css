@@ -1,0 +1,100 @@
+/* Navbar branding */
+.navbar-brand {
+    display: flex;
+    align-items: center;
+    color: #ffffff; /* White text */
+}
+
+.navbar-brand img {
+    margin-right: 10px;
+    width: auto;
+    height: 40px; /* Adjusted height */
+}
+
+/* Navbar */
+.navbar {
+    background-color: #343a40; /* Dark background */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Add a subtle shadow */
+}
+
+.navbar-nav .nav-link {
+    color: #ffffff; /* White text */
+}
+
+.navbar-nav .nav-link:hover {
+    color: #ff9933; /* Orange on hover */
+}
+
+/* Body and HTML */
+html, body {
+    height: 100%;
+    font-family: Arial, sans-serif; /* Fallback font */
+    background-color: #1c1c1c; /* Dark background */
+    color: #ffffff; /* White text */
+}
+
+/* Footer */
+.footer {
+    margin-top: 20px;
+    padding: 15px 0;
+    background-color: #343a40; /* Dark background */
+    text-align: center;
+}
+
+/* Main content */
+main > .container {
+    padding: 40px 15px 0;
+    background-color: #2c2c2c; /* Darker background */
+    border-radius: 10px; /* Rounded corners */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Add shadow */
+}
+
+/* Image container */
+.image-container {
+    margin-bottom: 20px;
+    border-radius: 10px; /* Rounded corners */
+    overflow: hidden; /* Hide overflowing content */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Add shadow */
+}
+
+/* Chat message styling */
+.notifications {
+    display: flex;
+    flex-direction: column;
+}
+
+.notification {
+    max-width: 70%;
+    margin: 5px;
+    padding: 10px;
+    border-radius: 10px;
+}
+
+.sender-message {
+    align-self: flex-end;
+    background-color: #DCF8C6;
+}
+
+.recipient-message {
+    align-self: flex-start;
+    background-color: #E2E2E2;
+}
+
+/* CSS for notification messages */
+.notification-container {
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+}
+
+.message-text {
+    font-weight: normal;
+}
+
+.timestamp {
+    font-size: smaller;
+}
+
+.sender-id {
+    font-size: smaller;
+}

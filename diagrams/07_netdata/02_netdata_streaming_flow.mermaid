@@ -1,0 +1,44 @@
+sequenceDiagram
+    participant A as Netdata Agent<br/>(web1, db1, lb1, ...)
+    participant P as Netdata Parent<br/>(monitor1 :19999)
+    participant N as Nginx lb1/lb2<br/>(proxy /netdata/)
+    participant U as User Browser<br/>(192.168.44.10/netdata/)
+
+    Note over A,P: === Agent Registration & Streaming ===
+
+    A->>A: Start netdata service<br/>(systemd)
+    A->>A: Collect system metrics<br/>(CPU, RAM, Disk, Network, Processes)
+
+    A->>P: Stream open → 192.168.44.61:19999<br/>api key: netdata-monitoring-key
+    P-->>A: Stream accepted ✅
+
+    loop Every 1 second
+        A->>P: Stream metrics (compressed)<br/>cpu: 12%, ram: 45%, disk: 32%, net: 1.2Mbps
+        P->>P: Store metrics in RRD database
+    end
+
+    Note over A,P: === Dashboard Access via VIP ===
+
+    U->>N: GET http://192.168.44.10/netdata/
+    N->>P: proxy → http://192.168.44.61:19999/
+    P-->>N: Dashboard HTML + JS
+    N-->>U: Dashboard rendered 🟢
+
+    U->>N: GET /netdata/api/v1/info
+    N->>P: proxy → /api/v1/info
+    P-->>N: JSON with all 10 hosts
+    N-->>U: Host list populated in sidebar
+
+    U->>N: GET /netdata/api/v1/data?...&chart=system.cpu
+    N->>P: proxy → chart query
+    P->>P: Aggregate from local RRD<br/>(all hosts' data)
+    P-->>N: Time-series JSON
+    N-->>U: CPU chart rendered 📈
+
+    Note over A,P: === Reconnection ===
+
+    A--xP: Network blip / agent restart
+    A->>A: Reconnect delay: 5s
+    A->>P: Stream reopen → 192.168.44.61:19999
+    P-->>A: Stream accepted ✅
+    A->>P: Resume streaming from buffer

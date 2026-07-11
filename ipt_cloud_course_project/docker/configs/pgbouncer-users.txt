@@ -1,0 +1,3 @@
+"postgres" "app_password"
+"app_user" "app_password"
+"replicator" "replicator_pass"

@@ -1,0 +1,39 @@
+global
+    log /dev/log local0
+    user haproxy
+    group haproxy
+    daemon
+
+defaults
+    log global
+    mode tcp
+    timeout connect 5s
+    timeout client 1m
+    timeout server 1m
+
+frontend db_proxy
+    bind *:5000
+    default_backend db_cluster
+
+backend db_cluster
+    # PgBouncer :6432 (co-localizado com PostgreSQL em cada DB)
+    # Health check via Patroni /primary (HTTP 200 = master, 503 = replica)
+    option httpchk GET /primary
+    server db1 192.168.44.31:6432 check port 8008
+    server db2 192.168.44.32:6432 check port 8008
+
+frontend redis_proxy
+    bind *:6379
+    default_backend redis_cluster
+
+backend redis_cluster
+    option tcp-check
+    tcp-check send AUTH\ redispass\r\n
+    tcp-check expect string +OK
+    tcp-check send PING\r\n
+    tcp-check expect string +PONG
+    tcp-check send info\ replication\r\n
+    tcp-check expect string role:master
+    server storage1 192.168.44.41:6379 check inter 2s
+    server storage2 192.168.44.42:6379 check inter 2s
+    server storage3 192.168.44.43:6379 check inter 2s

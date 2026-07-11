@@ -1,0 +1,1 @@
+{"nodes": [{"id": "pgbouncer_handlers_main_yml", "label": "PgBouncer Ansible Handlers", "file_type": "code", "source_file": "ipt_cloud_course_project/ansible/roles/pgbouncer/handlers/main.yml", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null}], "edges": [], "hyperedges": []}

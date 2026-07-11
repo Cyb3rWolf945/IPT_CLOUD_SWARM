@@ -1,0 +1,49 @@
+graph LR
+    subgraph "External"
+        U[👤 User / Browser] -->|HTTP :80| VIP[192.168.44.10 VIP]
+    end
+
+    subgraph "Load Balancers"
+        VIP -->|Keepalived VRRP| LB1[lb1 Nginx]
+        VIP -->|Keepalived VRRP| LB2[lb2 Nginx]
+        LB1 -->|proxy /netdata/| MONITOR[monitor1 Netdata Parent<br/>:19999]
+        LB2 -->|proxy /netdata/| MONITOR
+    end
+
+    subgraph "Web Tier"
+        LB1 -->|proxy :80| WEB1[web1 Apache/PHP + Ratchet]
+        LB2 -->|proxy :80| WEB2[web2 Apache/PHP + Ratchet]
+    end
+
+    subgraph "Database Tier"
+        DB1[(db1 PostgreSQL + Patroni + PgBouncer)]
+        DB2[(db2 PostgreSQL + Patroni + PgBouncer)]
+    end
+
+    subgraph "Redis Sentinel Cluster"
+        STOR1[storage1 Redis + Sentinel]
+        STOR2[storage2 Redis + Sentinel]
+        STOR3[storage3 Redis + Sentinel]
+    end
+
+    subgraph "Object Storage"
+        MINIO[minio1 MinIO :9000]
+    end
+
+    subgraph "Monitoring — NEW"
+        MONITOR
+    end
+
+    WEB1 -.->|stream metrics :19999| MONITOR
+    WEB2 -.->|stream metrics :19999| MONITOR
+    LB1 -.->|stream metrics :19999| MONITOR
+    LB2 -.->|stream metrics :19999| MONITOR
+    DB1 -.->|stream metrics :19999| MONITOR
+    DB2 -.->|stream metrics :19999| MONITOR
+    STOR1 -.->|stream metrics :19999| MONITOR
+    STOR2 -.->|stream metrics :19999| MONITOR
+    STOR3 -.->|stream metrics :19999| MONITOR
+    MINIO -.->|stream metrics :19999| MONITOR
+
+    style MONITOR fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style U fill:#2196F3,stroke:#1565C0,color:#fff

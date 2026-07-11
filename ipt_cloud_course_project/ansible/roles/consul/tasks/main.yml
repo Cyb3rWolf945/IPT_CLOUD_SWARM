@@ -1,0 +1,39 @@
+---
+- name: Instalar dependencias base
+  apt:
+    name:
+      - curl
+      - gnupg2
+      - software-properties-common
+    state: present
+
+- name: Adicionar chave GPG oficial da HashiCorp
+  apt_key:
+    url: https://apt.releases.hashicorp.com/gpg
+    state: present
+
+- name: Adicionar repositorio da HashiCorp
+  apt_repository:
+    repo: "deb [arch=amd64] https://apt.releases.hashicorp.com jammy main"
+    state: present
+
+- name: Instalar Consul
+  apt:
+    name: consul
+    state: present
+    update_cache: yes
+
+- name: Aplicar configuracao do cluster Consul
+  template:
+    src: consul.hcl.j2
+    dest: /etc/consul.d/consul.hcl
+    owner: consul
+    group: consul
+    mode: '0644'
+  notify: restart consul
+
+- name: Garantir que o Consul arranca com o sistema
+  service:
+    name: consul
+    state: started
+    enabled: yes

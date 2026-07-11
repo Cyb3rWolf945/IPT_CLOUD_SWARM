@@ -1,0 +1,127 @@
+graph TB
+    subgraph "Phase 1: VM-Based Architecture"
+        direction TB
+
+        subgraph "External"
+            V1[🌐 Browser/vegeta]
+        end
+
+        VIP{{192.168.44.10 VIP<br/>Keepalived VRRP}}
+
+        subgraph "LB Tier (2 VMs)"
+            LB1A[lb1: Nginx + HAProxy<br/>192.168.44.11<br/>1 vCPU · 1GB RAM]
+            LB2A[lb2: Nginx + HAProxy<br/>192.168.44.12<br/>1 vCPU · 1GB RAM]
+        end
+
+        subgraph "Web Tier (2 VMs)"
+            W1A[web1: Apache/PHP + Ratchet<br/>192.168.44.21<br/>1 vCPU · 1GB RAM]
+            W2A[web2: Apache/PHP + Ratchet<br/>192.168.44.22<br/>1 vCPU · 1GB RAM]
+        end
+
+        subgraph "DB Tier (2 VMs)"
+            DB1A[db1: PG14 + Patroni + Consul + PgBouncer<br/>192.168.44.31<br/>1 vCPU · 1GB RAM]
+            DB2A[db2: PG14 + Patroni + Consul + PgBouncer<br/>192.168.44.32<br/>1 vCPU · 1GB RAM]
+        end
+
+        subgraph "Cache Tier (3 VMs)"
+            R1A[storage1: Redis + Sentinel<br/>192.168.44.41 · 1GB]
+            R2A[storage2: Redis + Sentinel<br/>192.168.44.42 · 1GB]
+            R3A[storage3: Redis + Sentinel<br/>192.168.44.43 · 1GB]
+        end
+
+        subgraph "Storage (1 VM)"
+            MIN1A[minio1: MinIO<br/>192.168.44.51<br/>1 vCPU · 1GB RAM]
+        end
+
+        subgraph "Monitoring (1 VM)"
+            MON1A[monitor1: Netdata Parent + Loki + Grafana<br/>192.168.44.61 · 1GB]
+        end
+
+        subgraph "Provisioning"
+            VAGRANT[Vagrantfile + Ansible<br/>site.yml · 14 roles · inventory.ini]
+        end
+
+        V1 --> VIP
+        VIP --> LB1A
+        VIP --> LB2A
+        LB1A --> W1A
+        LB2A --> W2A
+        W1A --> DB1A
+        W2A --> DB2A
+        W1A --> R1A
+        W2A --> R1A
+        W1A --> MIN1A
+        W2A --> MIN1A
+        VAGRANT -.->|provisions| LB1A
+    end
+
+    subgraph "Phase 2: Docker Swarm Architecture"
+        direction TB
+
+        subgraph "External 2"
+            V2[🌐 Browser/vegeta]
+        end
+
+        MESH{{Swarm Routing Mesh<br/>ports 80, 5000, 9000, 19999, 3000}}
+
+        subgraph "1 Host — All Containers"
+            NGINX[nginx<br/>HTTP :80 + Stream :5000]
+
+            WEB[web service<br/>Apache/PHP · replicas: 2]
+
+            WS[websocket service<br/>RatchetPHP :8000 · replicas: 2]
+
+            subgraph "DB HA"
+                DB1B[db1: PG14 + Patroni]
+                DB2B[db2: PG14 + Patroni]
+                PB1B[pgbouncer1 :6432]
+                PB2B[pgbouncer2 :6432]
+                CONSUL[consul cluster<br/>3 nodes · Raft consensus]
+            end
+
+            REDIS[redis1,2,3 + sentinel1,2,3<br/>1 master + 2 replicas]
+
+            MIN1B[minio :9000]
+
+            MON1B[netdata parent + loki + grafana + promtail]
+        end
+
+        subgraph "Provisioning 2"
+            COMPOSE[docker-compose.yml<br/>single file · stack deploy]
+        end
+
+        V2 --> MESH
+        MESH --> NGINX
+        NGINX --> WEB
+        NGINX --> WS
+        NGINX --> PB1B
+        NGINX --> PB2B
+        PB1B --> DB1B
+        PB2B --> DB2B
+        DB1B <--> CONSUL
+        DB2B <--> CONSUL
+        WEB --> REDIS
+        WS --> REDIS
+        WEB --> MIN1B
+        COMPOSE -.->|deploys| MESH
+    end
+
+    style VIP fill:#f9a825,stroke:#f57f17,color:#000
+    style VAGRANT fill:#ffcc80,stroke:#ff9800,color:#000
+    style MESH fill:#43a047,stroke:#2e7d32,color:#fff
+    style COMPOSE fill:#a5d6a7,stroke:#4caf50,color:#000
+
+    subgraph "Key Differences"
+        DIFF["🔑 Key Differences:<br/>
+        • 11 VMs (11GB reserved) → 20+ containers (~2GB used)<br/>
+        • Static IPs (192.168.44.x) → DNS names (db1, redis1, ...)<br/>
+        • Keepalived VRRP VIP → Swarm Routing Mesh<br/>
+        • HAProxy TCP proxy → Nginx Stream module<br/>
+        • Netdata agents × 10 → Single Netdata parent<br/>
+        • Promtail agents × 10 → Single Promtail log scraper<br/>
+        • vagrant up + ansible-playbook → docker stack deploy<br/>
+        • Manual recovery → Auto restart (reconciliation loop)<br/>
+        • Scale: 2-5 min → 2-5 seconds"]
+    end
+
+    style DIFF fill:#e3f2fd,stroke:#1565c0,color:#000

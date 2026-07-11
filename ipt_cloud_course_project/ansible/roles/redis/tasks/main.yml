@@ -1,0 +1,46 @@
+---
+- name: Instalar o servidor Redis
+  apt:
+    name: redis-server
+    state: present
+
+- name: Configurar o Redis para escutar na rede interna
+  lineinfile:
+    path: /etc/redis/redis.conf
+    regexp: '^bind 127\.0\.0\.1'
+    line: 'bind 0.0.0.0'
+  notify: restart redis
+
+- name: Desativar protected-mode (Para o Laboratorio)
+  lineinfile:
+    path: /etc/redis/redis.conf
+    regexp: '^protected-mode yes'
+    line: 'protected-mode no'
+  notify: restart redis
+
+- name: Configurar replicação — storage2 e storage3 replicam do storage1
+  lineinfile:
+    path: /etc/redis/redis.conf
+    regexp: '^#?replicaof '
+    line: 'replicaof 192.168.44.41 6379'
+  when: inventory_hostname != 'storage1'
+  notify: restart redis
+
+- name: Configurar master auth para replicação
+  lineinfile:
+    path: /etc/redis/redis.conf
+    regexp: '^#?masterauth '
+    line: 'masterauth redispass'
+  when: inventory_hostname != 'storage1'
+
+- name: Definir password do Redis (proteger o master)
+  lineinfile:
+    path: /etc/redis/redis.conf
+    regexp: '^#?requirepass '
+    line: 'requirepass redispass'
+
+- name: Garantir que o Redis arranca com o sistema
+  service:
+    name: redis-server
+    state: started
+    enabled: yes

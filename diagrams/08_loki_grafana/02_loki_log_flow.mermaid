@@ -1,0 +1,44 @@
+sequenceDiagram
+    participant PT as Promtail Agent<br/>(lb1, web1, db1, ...)
+    participant LK as Loki<br/>(monitor1 :3100)
+    participant GF as Grafana<br/>(monitor1 :3000)
+    participant NG as Nginx VIP<br/>(192.168.44.10)
+    participant USR as User Browser
+
+    Note over PT,USR: ═══ SCRAPE: Promtail reads local log files ═══
+
+    PT->>PT: tail -f /var/log/syslog
+    PT->>PT: tail -f /var/log/nginx/access.log
+    PT->>PT: tail -f /var/log/postgresql/*.log
+    PT->>PT: tail -f /var/log/redis/*.log
+
+    Note over PT: Add labels:<br/>host=web1<br/>tier=webservers<br/>job=service
+
+    Note over PT,LK: ═══ PUSH: Promtail ships logs to Loki ═══
+
+    loop Every batch (5s or 1MB)
+        PT->>LK: POST /loki/api/v1/push<br/>{ "streams": [{ "labels": "{host="web1"}", "entries": [...] }] }
+        LK->>LK: Decompress, index by labels
+        LK->>LK: Store in TSDB + filesystem chunks
+        LK-->>PT: 204 No Content
+    end
+
+    Note over LK: ═══ STORE: Loki organizes logs ═══
+    Note over LK: Labels: host, tier, job<br/>Index: tsdb (every 24h)<br/>Chunks: /var/lib/loki/chunks/<br/>Retention: 7 days
+
+    Note over GF,USR: ═══ QUERY: User explores logs in Grafana ═══
+
+    USR->>NG: GET /grafana/explore
+    NG->>GF: proxy → monitor1:3000
+    GF-->>NG: Grafana UI (HTML/JS)
+    NG-->>USR: Grafana Explore page
+
+    USR->>GF: Run query: {host="web1", job="service"}
+    GF->>LK: POST /loki/api/v1/query_range<br/>query={host="web1"}&limit=1000
+    LK->>LK: Search TSDB index → find chunks
+    LK->>LK: Read matching log lines from chunks
+    LK-->>GF: JSON: [{ "timestamp": "...", "line": "GET /db.php 200", "labels": {...} }, ...]
+    GF->>GF: Render log table with timestamps
+    GF-->>USR: Log results displayed
+
+    Note over USR: ✅ Filter by host, tier, job,<br/>or free-text search with |= "ERROR"

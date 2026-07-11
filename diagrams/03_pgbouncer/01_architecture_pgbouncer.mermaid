@@ -1,0 +1,25 @@
+graph LR
+    subgraph "Frontend"
+        V[🌐 vegeta / Browser] -->|HTTP :80| VIP[192.168.44.10 VIP]
+    end
+
+    VIP -->|Keepalived| LB1[lb1 Nginx]
+    VIP -->|Keepalived| LB2[lb2 Nginx]
+
+    LB1 -->|proxy| WEB1[web1 Apache/PHP]
+    LB2 -->|proxy| WEB2[web2 Apache/PHP]
+
+    WEB1 -->|DB_PORT=5000| HAP[HAProxy<br/>lb1/lb2 :5000]
+    WEB2 -->|DB_PORT=5000| HAP
+
+    subgraph "DB Tier"
+        HAP -->|TCP check :6432| PB2[PgBouncer db2<br/>:6432]
+        HAP -->|TCP check :6432| PB1[PgBouncer db1<br/>:6432]
+        PB2 -->|pool :5432| PG2[(PostgreSQL db2<br/>PRIMARY)]
+        PB1 -->|pool :5432| PG1[(PostgreSQL db1<br/>REPLICA)]
+        PG2 -.->|streaming replication| PG1
+        PG1 <-->|Consul| PG2
+    end
+
+    WEB1 -->|sessions| REDIS[(Redis<br/>storage1)]
+    WEB2 -->|sessions| REDIS

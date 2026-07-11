@@ -1,0 +1,86 @@
+---
+- name: Provisionamento Reativo do Docker Swarm
+  hosts: all
+  become: yes
+  tasks:
+    - name: Instalar dependencias e Docker
+      apt:
+        name: [curl, apt-transport-https, ca-certificates]
+        state: present
+        update_cache: yes
+
+    - name: Instalar Docker oficial
+      shell: curl -fsSL https://get.docker.com | sh
+      args:
+        creates: /usr/bin/docker
+
+    # ==========================================
+    # LÓGICA DO MANAGER
+    # ==========================================
+    - name: Bloco do Manager
+      when: role == 'manager'
+      block:
+        - name: Verificar se ja e Manager
+          shell: 'docker info | grep "Swarm: active"'
+          register: swarm_status
+          failed_when: false
+          changed_when: false
+
+        - name: Inicializar Swarm
+          command: docker swarm init --listen-addr 0.0.0.0:2377 --advertise-addr {{ local_ip }}:2377
+          when: swarm_status.rc != 0
+        
+        - name: Obter token de worker
+          command: docker swarm join-token worker -q
+          register: worker_token
+        
+        - name: Gravar Estado (PUT) na API Local
+          uri:
+            url: "http://{{ local_ip }}:5000/api/cluster/state"
+            method: PUT
+            body_format: json
+            body: 
+              manager_ip: "{{ local_ip }}"
+              swarm_port: "{{ swarm_port }}"
+              worker_token: "{{ worker_token.stdout }}"
+
+    # ==========================================
+    # LÓGICA DO WORKER
+    # ==========================================
+    - name: Bloco do Worker
+      when: role == 'worker'
+      block:
+        - name: Verificar se ja e Worker
+          shell: 'docker info | grep "Swarm: active"'
+          register: worker_status
+          failed_when: false
+          changed_when: false
+
+        # Faz um loop a perguntar à API pelo token caso o Manager ainda esteja a provisionar
+        - name: Aguardar que o Token do Swarm esteja disponível na API
+          uri:
+            url: "http://{{ manager_ip }}:5000/api/cluster/state"
+            method: GET
+            return_content: yes
+          register: api_cluster_state
+          until: "api_cluster_state.json.worker_token is defined and api_cluster_state.json.worker_token != ''"
+          retries: 40
+          delay: 5
+          when: worker_status.rc != 0
+
+        # CORREÇÃO: Conecta usando a porta dinâmica devolvida pela API do cluster
+        - name: Juntar ao Cluster Hibrido
+          command: "docker swarm join --token {{ api_cluster_state.json.worker_token }} {{ manager_ip }}:{{ api_cluster_state.json.swarm_port }}"
+          when: worker_status.rc != 0
+  
+    # ==========================================
+    # NOTIFICAÇÃO DE FINALIZAÇÃO (Manager e Worker)
+    # ==========================================
+    - name: Notificar API que o nó está provisionado
+      uri:
+        url: "http://{{ manager_ip | default(local_ip) }}:5000/api/nodes/{{ ansible_hostname | regex_replace('swarm-node-', '') }}/status"
+        method: PUT
+        body_format: json
+        body:
+          status: "provisioned"
+          role: "{{ role }}"

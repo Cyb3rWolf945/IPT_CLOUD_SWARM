@@ -1,0 +1,17 @@
+sequenceDiagram
+    participant C as Consul KV
+    participant P2 as Patroni db2 🔄
+    participant P1 as Patroni db1
+    participant PG1 as PostgreSQL db1
+    participant PG2 as PostgreSQL db2
+
+    Note over P2: 🔌 db2 volta a ligar-se
+
+    P2->>C: 👀 leader = db1 (não sou eu)
+    P2->>PG2: 🧹 Limpar dados antigos
+    P2->>PG2: 📥 Clone (pg_basebackup) do db1
+    P2->>PG2: ▶️ Iniciar como replica
+    PG2->>PG1: 🔗 Streaming replication ativo
+    P2->>C: Registar como replica no Consul
+
+    Note over P2,PG2: ✅ Cluster fully healthy again

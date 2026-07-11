@@ -1,0 +1,15 @@
+sequenceDiagram
+    participant S as Redis Sentinel
+    participant M as Old Master storage1 🔄
+    participant CM as Current Master<br/>(storage3)
+    participant R as Replica (storage2)
+
+    Note over M: 🔌 storage1 Redis restarted<br/>(systemctl start redis-server)
+
+    M->>M: Starts as master (from config)
+    S->>S: ⚠️ Detects conflicting master!
+    S->>M: ⬇️ DEMOTE — reconfigure as replica of storage3
+    M->>CM: 🔗 Connect as replica, start sync
+    CM->>M: Streaming replication
+
+    Note over M: ✅ Cluster fully healthy<br/>1 master + 2 replicas

@@ -1,0 +1,20 @@
+sequenceDiagram
+    participant S as Redis Sentinel<br/>(3 nodes, quorum=2)
+    participant M as Redis Master<br/>(storage1) ❌
+    participant R2 as Redis Replica<br/>(storage2)
+    participant R3 as Redis Replica<br/>(storage3)
+    participant PHP as PHP Sessions
+
+    Note over M: 💀 storage1 Redis master killed<br/>(systemctl stop redis-server)
+
+    S->>S: Sentinel detects master down<br/>(subjective → objective, quorum=2)
+    S->>S: Election: storage3 wins
+    S->>R3: 🚀 PROMOTE to master
+    S->>R2: 🔄 Reconfigure to replicate from storage3
+    S->>S: Announce new master: 192.168.44.43:6379
+
+    PHP->>S: Who is the master?
+    S->>PHP: 192.168.44.43:6379
+    PHP->>R3: Sessions restored ✅
+
+    Note over M: ⏱️ Failover: ~5 seconds<br/>Vegeta: 100% success, 0 failures

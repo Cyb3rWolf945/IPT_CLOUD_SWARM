@@ -1,0 +1,24 @@
+sequenceDiagram
+    participant PHP as PHP App<br/>(web1/web2)
+    participant HA as HAProxy<br/>:5000
+    participant PB as PgBouncer<br/>:6432 (db2)
+    participant PG as PostgreSQL<br/>:5432 (db2)
+
+    Note over PHP,PG: 500 req/s — Sem PgBouncer seriam 500 conexões PostgreSQL
+
+    PHP->>HA: connect to DB_HOST=192.168.44.10:5000
+    HA->>PB: TCP route to db2:6432 (pooler)
+    Note over PB: Pool já tem 50 conexões<br/>pré-estabelecidas
+    PB->>PG: reuse connection from pool
+    PG-->>PB: query result
+    PB-->>HA: response
+    HA-->>PHP: response
+    Note over PB: connection returns to pool<br/>(transaction mode)
+
+    PHP->>HA: next request
+    HA->>PB: TCP route
+    Note over PB: reuse SAME connection
+    PB->>PG: same pooled connection
+    PG-->>PB: result
+    PB-->>HA: response
+    HA-->>PHP: response

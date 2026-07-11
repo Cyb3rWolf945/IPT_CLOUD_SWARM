@@ -1,0 +1,20 @@
+sequenceDiagram
+    participant B as Browser
+    participant NG as Nginx ip_hash
+    participant W1 as Ratchet web1 ❌
+    participant W2 as Ratchet web2
+    participant R as Redis
+
+    Note over W1: systemctl stop ratchet (web1)
+
+    B->>NG: WebSocket disconnected
+    NG->>W1: backend down
+    B->>B: onclose → reconnect (exponential backoff)
+    B->>NG: ws://VIP:8000/ws/?user_id=xxx
+    NG->>W2: proxy to web2:8000 (ip_hash rebalance)
+    W2->>R: GET ws:users:{session} → exists
+    W2->>R: SET ws:users:{session} = {web2, newResourceId}
+    W2->>R: PUBLISH chat {type:system, event:user_joined}
+    W2-->>B: 🟢 Connected to WebSocket server.
+
+    Note over B,W2: ✅ Failover transparent<br/>Messages continue via Redis pub/sub

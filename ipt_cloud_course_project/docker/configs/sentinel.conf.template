@@ -1,0 +1,16 @@
+# Redis Sentinel Configuration Template
+# REDIS1_IP is replaced at runtime with actual IP
+port 26379
+bind 0.0.0.0
+
+# Monitor the Redis master (IP resolved at startup)
+sentinel monitor mymaster REDIS1_IP 6379 2
+sentinel auth-pass mymaster redispass
+requirepass redispass
+sentinel down-after-milliseconds mymaster 5000
+sentinel failover-timeout mymaster 30000
+sentinel parallel-syncs mymaster 1
+
+# Logging to stdout
+logfile ""
+loglevel notice

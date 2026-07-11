@@ -1,0 +1,57 @@
+scope: ${PATRONI_SCOPE}
+namespace: ${PATRONI_NAMESPACE}
+name: ${HOSTNAME}
+
+restapi:
+  listen: 0.0.0.0:${PATRONI_RESTAPI_PORT}
+  connect_address: ${MY_IP}:${PATRONI_RESTAPI_PORT}
+
+consul:
+  host: ${CONSUL_HOST}:${CONSUL_PORT}
+  register_service: true
+
+bootstrap:
+  dcs:
+    ttl: 30
+    loop_wait: 10
+    retry_timeout: 10
+    maximum_lag_on_failover: 1048576
+  initdb:
+    - encoding: UTF8
+    - locale: C
+  post_bootstrap: /post_bootstrap.sh
+  pg_hba:
+    - local all all trust
+    - host all all 0.0.0.0/0 md5
+    - host replication replicator 0.0.0.0/0 md5
+  users:
+    app_user:
+      password: ${DB_PASS}
+      options: [CREATEDB, LOGIN]
+
+postgresql:
+  listen: 0.0.0.0:5432
+  connect_address: ${MY_IP}:5432
+  data_dir: ${PG_DATA_DIR}
+  bin_dir: ${PG_BIN_DIR}
+  parameters:
+    password_encryption: md5
+  pg_hba:
+    - local all all trust
+    - host all all 0.0.0.0/0 md5
+    - host replication replicator 0.0.0.0/0 md5
+  authentication:
+    replication:
+      username: replicator
+      password: ${REPLICATOR_PASS}
+    superuser:
+      username: postgres
+      password: ${DB_PASS}
+
+watchdog:
+  mode: off
+
+tags:
+  nofailover: false
+  noloadbalance: false
+  clonefrom: false

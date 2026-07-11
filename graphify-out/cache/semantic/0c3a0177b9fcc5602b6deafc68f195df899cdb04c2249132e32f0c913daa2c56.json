@@ -1,0 +1,1 @@
+{"nodes": [{"id": "tasks_main_haproxy_service", "label": "HAProxy Load Balancer Daemon", "file_type": "code", "source_file": "ipt_cloud_course_project/ansible/roles/haproxy/tasks/main.yml", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null}], "edges": [], "hyperedges": []}

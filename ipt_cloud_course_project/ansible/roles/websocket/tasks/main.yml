@@ -1,0 +1,70 @@
+---
+- name: Garantir que a pasta ws existe no destino
+  file:
+    path: /var/www/html/ws
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Copiar composer.json para o destino
+  copy:
+    src: "{{ playbook_dir }}/../ws/composer.json"
+    dest: /var/www/html/ws/composer.json
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Instalar o Composer
+  apt:
+    name: composer
+    state: present
+  become: yes
+
+- name: Instalar dependências nativamente (fora da pasta partilhada)
+  shell: |
+    mkdir -p /opt/ws
+    cp /var/www/html/ws/composer.json /opt/ws/
+    cd /opt/ws
+    composer require cboden/ratchet:^0.4.4 predis/predis:^2.0 --update-no-dev --no-interaction
+  become: yes
+
+- name: Deploy ficheiro do servidor WebSocket (Redis pub/sub)
+  template:
+    src: websockets_server.php.j2
+    dest: /var/www/html/ws/websockets_server.php
+    owner: root
+    group: root
+    mode: '0755'
+  notify: restart ratchet
+
+- name: Criar serviço systemd para o Ratchet
+  copy:
+    content: |
+      [Unit]
+      Description=RatchetPHP WebSocket Server
+      After=network.target
+
+      [Service]
+      Type=simple
+      User=root
+      WorkingDirectory=/var/www/html/ws
+      ExecStart=/usr/bin/php /var/www/html/ws/websockets_server.php
+      ExecReload=/bin/kill -HUP $MAINPID
+      Restart=always
+      RestartSec=3
+
+      [Install]
+      WantedBy=multi-user.target
+    dest: /etc/systemd/system/ratchet.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart ratchet
+
+- name: Recarregar systemd e garantir que o Ratchet arranca
+  systemd:
+    name: ratchet
+    state: started
+    enabled: yes
+    daemon_reload: yes

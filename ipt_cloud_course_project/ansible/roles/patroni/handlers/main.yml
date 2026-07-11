@@ -1,0 +1,5 @@
+---
+- name: restart patroni
+  systemd:
+    name: patroni
+    state: restarted

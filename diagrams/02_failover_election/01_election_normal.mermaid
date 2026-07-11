@@ -1,0 +1,18 @@
+sequenceDiagram
+    participant C as Consul KV<br/>leader = "db2"
+    participant P2 as Patroni db2<br/>(192.168.44.32)
+    participant P1 as Patroni db1<br/>(192.168.44.31)
+    participant PG2 as PostgreSQL db2
+    participant PG1 as PostgreSQL db1
+    participant HA as HAProxy (:5000)
+
+    Note over C,P2: 🔐 db2 detém o lock da sessão → PRIMARY
+
+    P2->>C: 🔐 Eu tenho o lock → sou PRIMARY
+    P2->>PG2: Manter como master (read/write)
+    P1->>C: 👀 A verificar lock... líder = db2
+    P1->>PG1: Sou replica → streaming do db2
+
+    HA->>PG2: ✅ health check :5432 (primary)
+    HA->>PG1: ✅ health check :5432 (replica)
+    HA->>C: /primary endpoint → db2

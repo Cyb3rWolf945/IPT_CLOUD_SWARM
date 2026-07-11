@@ -1,0 +1,16 @@
+-- Substitui pelo IP do computador Tailscale
+local url = "http://100.97.214.63:5000/api/nodes"
+local MC_ID = tostring(os.getComputerID())
+
+print("A enviar sinal para a API...")
+
+-- O comando http.post envia o JSON para o teu endpoint
+local response = http.post(url, textutils.serializeJSON({mc_id = MC_ID}), {["Content-Type"] = "application/json"})
+
+if response then
+    print("Sucesso! API respondeu:")
+    print(response.readAll())
+    response.close()
+else
+    print("Erro: A API não respondeu. Verifica o IP ou a Firewall.")
+end

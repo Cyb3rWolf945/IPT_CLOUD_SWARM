@@ -1,0 +1,18 @@
+sequenceDiagram
+    participant C as Consul KV
+    participant P2 as Patroni db2 ❌
+    participant P1 as Patroni db1
+    participant PG1 as PostgreSQL db1
+    participant HA as HAProxy (:5000)
+
+    Note over P2: 💀 db2 morre / vai abaixo
+
+    C->>C: Sessão do db2 expira ⏰<br/>Lock libertado!
+    P1->>C: 👀 leader = NONE!
+    P1->>C: 🔒 Eu agarro o lock → leader = "db1"
+    P1->>PG1: 🚀 PROMOTE to primary!
+    PG1->>PG1: pg_ctl promote
+    P1->>C: Registar como primary no Consul
+    HA->>PG1: ✅ Agora és o novo master
+
+    Note over P1,PG1: ⏱️ ~4 segundos (medido no teste vegeta)

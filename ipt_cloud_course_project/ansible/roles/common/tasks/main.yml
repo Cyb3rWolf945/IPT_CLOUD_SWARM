@@ -1,0 +1,15 @@
+---
+- name: Update apt cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Instalar pacotes de rede e diagnóstico
+  apt:
+    name: 
+      - vim
+      - htop
+      - curl
+      - iproute2
+      - net-tools
+    state: present

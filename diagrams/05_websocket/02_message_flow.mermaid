@@ -1,0 +1,31 @@
+sequenceDiagram
+    participant B1 as Browser A<br/>(routed to web1)
+    participant NG as Nginx VIP<br/>ip_hash
+    participant W1 as Ratchet web1
+    participant R as Redis pub/sub<br/>channel: chat
+    participant W2 as Ratchet web2
+    participant B2 as Browser B<br/>(routed to web2)
+
+    B1->>NG: ws://192.168.44.10:8000/ws/
+    NG->>W1: proxy to web1:8000
+    W1->>R: SET ws:users:{session} = {server, resourceId}
+    W1->>R: PUBLISH chat {type:system, event:user_joined}
+
+    B2->>NG: ws://192.168.44.10:8000/ws/
+    NG->>W2: proxy to web2:8000
+    W2->>R: SET ws:users:{session} = {server, resourceId}
+    W2->>R: PUBLISH chat {type:system, event:user_joined}
+
+    Note over R: Cross-instance broadcast
+
+    R-->>W1: SUBSCRIBE: user_joined (from W2)
+    W1-->>B1: 👤 user joined · Online: 2
+    R-->>W2: SUBSCRIBE: user_joined (from W1)
+    W2-->>B2: 👤 user joined · Online: 2
+
+    B1->>W1: SEND {message: "Hello!"}
+    W1->>R: PUBLISH chat {message: "Hello!", sender: ...}
+    R-->>W1: SUBSCRIBE: message
+    R-->>W2: SUBSCRIBE: message
+    W1-->>B1: "Hello!" (from web1)
+    W2-->>B2: "Hello!" (from web1, via Redis) ✅

@@ -1,0 +1,53 @@
+---
+- name: Instalar PgBouncer
+  apt:
+    name: pgbouncer
+    state: present
+
+- name: Criar ficheiro de configuração do PgBouncer
+  template:
+    src: pgbouncer.ini.j2
+    dest: /etc/pgbouncer/pgbouncer.ini
+    owner: postgres
+    group: postgres
+    mode: '0640'
+  notify: restart pgbouncer
+
+- name: Criar ficheiro de utilizadores do PgBouncer
+  template:
+    src: userlist.txt.j2
+    dest: /etc/pgbouncer/userlist.txt
+    owner: postgres
+    group: postgres
+    mode: '0640'
+  notify: restart pgbouncer
+
+- name: Criar serviço systemd para o PgBouncer (substitui init.d quebrado)
+  copy:
+    content: |
+      [Unit]
+      Description=PgBouncer - PostgreSQL Connection Pooler
+      After=network.target
+
+      [Service]
+      Type=simple
+      User=postgres
+      Group=postgres
+      ExecStart=/usr/sbin/pgbouncer /etc/pgbouncer/pgbouncer.ini
+      ExecReload=/bin/kill -HUP $MAINPID
+      Restart=always
+
+      [Install]
+      WantedBy=multi-user.target
+    dest: /etc/systemd/system/pgbouncer.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart pgbouncer
+
+- name: Recarregar systemd e garantir que o PgBouncer arranca
+  systemd:
+    name: pgbouncer
+    state: started
+    enabled: yes
+    daemon_reload: yes

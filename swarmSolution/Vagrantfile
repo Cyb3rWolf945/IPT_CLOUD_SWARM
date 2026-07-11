@@ -1,0 +1,45 @@
+Vagrant.configure("2") do |config|
+  node_id = ENV['MC_NODE_ID'] || "0"
+  role = ENV['NODE_ROLE'] || "worker"
+  manager_ip = ENV['MANAGER_API_IP'] || "127.0.0.1"
+  local_ip = ENV['LOCAL_TAILSCALE_IP'] || "127.0.0.1"
+  swarm_token = ENV['SWARM_TOKEN'] || ""
+  
+  config.vm.define "swarm-node-#{node_id}" do |node|
+    node.vm.box = "ubuntu/jammy64"
+    node.vm.hostname = "swarm-node-#{node_id}"
+
+    # SE FOR MANAGER: Mantém as portas padrão fixas para o exterior ser previsível.
+    # SE FOR WORKER: Aplica o offset para não colidir caso subas múltiplos nós no mesmo host.
+    swarm_port   = (role == "manager") ? 2377 : (2377 + node_id.to_i)
+    gossip_port  = (role == "manager") ? 7946 : (7946 + node_id.to_i)
+    overlay_port = (role == "manager") ? 4789 : (4789 + node_id.to_i)
+
+    # 1. Porta de Gestão do Swarm (TCP 2377) aberta para a rede Tailscale
+    node.vm.network "forwarded_port", guest: 2377, host: swarm_port, host_ip: "0.0.0.0", id: "swarm_mgmt"
+
+    # 2. Porta de Gossip/Descoberta (TCP/UDP 7946) - Necessária para os nós se verem
+    node.vm.network "forwarded_port", guest: 7946, host: gossip_port, host_ip: "0.0.0.0", id: "swarm_gossip_tcp"
+    node.vm.network "forwarded_port", guest: 7946, host: gossip_port, host_ip: "0.0.0.0", protocol: "udp", id: "swarm_gossip_udp"
+
+    # 3. Porta de Overlay Network (UDP 4789) - Necessária para o tráfego dos containers
+    node.vm.network "forwarded_port", guest: 4789, host: overlay_port, host_ip: "0.0.0.0", protocol: "udp", id: "swarm_overlay"
+
+    node.vm.provider "virtualbox" do |vb|
+      vb.memory = "1024"
+      vb.name = "swarm-node-#{node_id}"
+    end
+
+    node.vm.provision "ansible" do |ansible|
+      ansible.compatibility_mode = "2.0"
+      ansible.playbook = "provision.yml"
+      ansible.extra_vars = {
+        role: role,
+        manager_ip: manager_ip,
+        local_ip: local_ip,
+        swarm_port: swarm_port,
+        swarm_token: swarm_token
+      }
+    end
+  end
+end

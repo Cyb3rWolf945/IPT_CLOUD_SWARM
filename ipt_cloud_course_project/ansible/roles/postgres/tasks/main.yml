@@ -1,0 +1,30 @@
+---
+- name: Instalar PostgreSQL e dependências
+  apt:
+    name:
+      - postgresql
+      - postgresql-contrib
+      - python3-psycopg2
+      - acl
+    state: present
+
+- name: Garantir que o PostgreSQL escuta na rede (IPv4)
+  lineinfile:
+    path: /etc/postgresql/14/main/postgresql.conf
+    regexp: "^#?listen_addresses"
+    line: "listen_addresses = '*'"
+  notify: restart postgres
+
+- name: Permitir ligações de rede na base de dados (pg_hba.conf com TRUST)
+  blockinfile:
+    path: /etc/postgresql/14/main/pg_hba.conf
+    block: |
+      # Aceitar ligacoes da rede interna sem password (O Patroni vai reescrever isto mais tarde)
+      host    all             all             192.168.44.0/24         trust
+  notify: restart postgres
+
+- name: Garantir que o PostgreSQL está a correr
+  service:
+    name: postgresql
+    state: started
+    enabled: yes

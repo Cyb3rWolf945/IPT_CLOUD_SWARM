@@ -1,0 +1,64 @@
+graph TB
+    subgraph "Phase 1: VM Baseline (192.168.44.0/24)"
+        direction LR
+        P1_STATIC["`**Static /** — 50/s
+        Mean: 2.68ms
+        p99: 4.53ms`"]
+        P1_DB50["`**DB /db.php** — 50/s
+        Mean: 2.48ms
+        p99: 5.17ms`"]
+        P1_DB200["`**DB /db.php** — 200/s
+        Mean: 2.21ms
+        p99: 3.66ms`"]
+        P1_DB500["`**DB /db.php** — 500/s
+        Mean: 2.03ms
+        p99: 4.99ms`"]
+    end
+
+    subgraph "Phase 2: Docker Compose (localhost:80)"
+        direction LR
+        P2_STATIC["`**Static /** — 50/s
+        Mean: 2.80ms (+4%)
+        p99: 4.41ms (−3%) ✅`"]
+        P2_DB50["`**DB /db.php** — 50/s
+        Mean: 6.76ms (+172%)
+        p99: 10.13ms ⚠️`"]
+        P2_DB200["`**DB /db.php** — 200/s
+        Mean: 5.14ms (+133%)
+        p99: 8.72ms ⚠️`"]
+        P2_DB500["`**DB /db.php** — 500/s
+        Mean: 6.78ms (+234%)
+        p99: 15.40ms ⚠️`"]
+    end
+
+    subgraph "Failover Comparison"
+        P1_FAIL["`**Phase 1 Failover**
+        Success: 100% (600/600)
+        Zero failures
+        Max latency: 9.29ms`"]
+        P2_FAIL["`**Phase 2 Failover**
+        Success: 99.83% (599/600)
+        1 timeout (10s)
+        Max latency: 10.001s`"]
+    end
+
+    subgraph "Root Cause"
+        RC["`**DB Latency Increase:**
+        1. Nginx stream proxy: +2-3ms vs HAProxy
+        2. Docker bridge network: +0.5-1ms per hop
+        3. 3 network hops for DB vs 2 in Phase 1
+
+        **Fix:** Replace Nginx stream with HAProxy container`"]
+    end
+
+    style P1_STATIC fill:#c8e6c9,color:#000
+    style P1_DB50 fill:#c8e6c9,color:#000
+    style P1_DB200 fill:#c8e6c9,color:#000
+    style P1_DB500 fill:#c8e6c9,color:#000
+    style P2_STATIC fill:#c8e6c9,color:#000
+    style P2_DB50 fill:#fff9c4,color:#000
+    style P2_DB200 fill:#fff9c4,color:#000
+    style P2_DB500 fill:#ffcc80,color:#000
+    style P1_FAIL fill:#c8e6c9,color:#000
+    style P2_FAIL fill:#fff9c4,color:#000
+    style RC fill:#e3f2fd,color:#000

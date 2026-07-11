@@ -1,0 +1,18 @@
+graph LR
+    subgraph "Frontend"
+        B[Browser] -->|ws://VIP:8000| NG[Nginx lb1/lb2<br/>ip_hash]
+    end
+
+    NG -->|proxy /ws/| W1[web1 Ratchet :8000]
+    NG -->|proxy /ws/| W2[web2 Ratchet :8000]
+
+    W1 -->|PUBLISH chat| R[Redis pub/sub<br/>channel: chat]
+    W2 -->|PUBLISH chat| R
+    R -->|SUBSCRIBE chat| W1
+    R -->|SUBSCRIBE chat| W2
+
+    W1 -->|store user→conn| RS[(Redis<br/>ws:users:*<br/>ws:connections:*)]
+    W2 -->|store user→conn| RS
+
+    W1 -.->|broadcast to<br/>local clients| C1[...]
+    W2 -.->|broadcast to<br/>local clients| C2[...]

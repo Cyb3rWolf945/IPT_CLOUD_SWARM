@@ -1,0 +1,14 @@
+graph LR
+    subgraph "Web Tier"
+        WEB1[web1 Apache/PHP]
+        WEB2[web2 Apache/PHP]
+    end
+
+    subgraph "MinIO Object Storage"
+        MINIO[minio1<br/>MinIO :9000]
+    end
+
+    WEB1 -->|s3fs mount<br/>gallery/| MINIO
+    WEB2 -->|s3fs mount<br/>gallery/| MINIO
+
+    MINIO --> BUCKET[(bucket: gallery<br/>image uploads)]

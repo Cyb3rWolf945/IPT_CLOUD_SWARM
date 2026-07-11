@@ -1,0 +1,76 @@
+---
+- name: Install Grafana GPG key
+  apt_key:
+    url: https://apt.grafana.com/gpg.key
+    state: present
+
+- name: Add Grafana APT repository
+  apt_repository:
+    repo: "deb https://apt.grafana.com stable main"
+    state: present
+    filename: grafana
+
+- name: Install Grafana
+  apt:
+    name: grafana
+    state: present
+    update_cache: yes
+
+- name: Create Grafana provisioning directories
+  file:
+    path: /etc/grafana/provisioning/datasources
+    state: directory
+    owner: grafana
+    group: grafana
+    mode: '0755'
+
+- name: Configure Loki datasource for Grafana
+  template:
+    src: grafana-datasources.yaml.j2
+    dest: /etc/grafana/provisioning/datasources/loki.yaml
+    owner: grafana
+    group: grafana
+    mode: '0644'
+  notify: restart grafana-server
+
+- name: Configure Grafana domain
+  lineinfile:
+    path: /etc/grafana/grafana.ini
+    regexp: '^;?domain ='
+    line: 'domain = 192.168.44.61'
+  notify: restart grafana-server
+
+- name: Configure Grafana for sub-path proxy (/grafana/)
+  lineinfile:
+    path: /etc/grafana/grafana.ini
+    regexp: '^;?root_url ='
+    line: 'root_url = %(protocol)s://%(domain)s:%(http_port)s/grafana/'
+  notify: restart grafana-server
+
+- name: Configure Grafana to serve from sub-path
+  lineinfile:
+    path: /etc/grafana/grafana.ini
+    regexp: '^;?serve_from_sub_path ='
+    line: 'serve_from_sub_path = true'
+  notify: restart grafana-server
+
+- name: Disable Grafana sign-up
+  lineinfile:
+    path: /etc/grafana/grafana.ini
+    regexp: '^;?allow_sign_up ='
+    line: 'allow_sign_up = false'
+  notify: restart grafana-server
+
+- name: Enable anonymous access (viewer)
+  lineinfile:
+    path: /etc/grafana/grafana.ini
+    regexp: '^;?enabled ='
+    line: 'enabled = true'
+  notify: restart grafana-server
+
+- name: Ensure Grafana is running and enabled
+  systemd:
+    name: grafana-server
+    daemon_reload: yes
+    state: started
+    enabled: yes

@@ -1,0 +1,17 @@
+datacenter = "project_o_dc"
+data_dir = "/opt/consul"
+
+# O Consul escuta no IP privado da VM atual
+bind_addr = "{{ ansible_host }}"
+client_addr = "0.0.0.0"
+
+# Ambos os nós vão atuar como servidores de consenso
+server = true
+bootstrap_expect = 2
+
+# Os nós procuram-se um ao outro para formar o cluster
+retry_join = ["192.168.44.31", "192.168.44.32"]
+
+ui_config {
+  enabled = true
+}
