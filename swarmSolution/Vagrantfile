@@ -6,7 +6,14 @@ Vagrant.configure("2") do |config|
   swarm_token = ENV['SWARM_TOKEN'] || ""
   
   config.vm.define "swarm-node-#{node_id}" do |node|
-    node.vm.box = "ubuntu/jammy64"
+    host_arch = uname -m.strip
+
+    if host_arch == 'x86_64'
+      node.vm.box = "ubuntu/jammy64"
+    else
+      node.vm.box = "bento/ubuntu-22.04"
+    end
+    
     node.vm.hostname = "swarm-node-#{node_id}"
 
     # SE FOR MANAGER: Mantém as portas padrão fixas para o exterior ser previsível.
