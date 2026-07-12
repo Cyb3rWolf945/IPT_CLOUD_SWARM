@@ -1,4 +1,6 @@
 import requests
+import base64
+import json
 
 # IP da máquina que aloja o contentor do Consul (Rede Tailscale)
 CONSUL_IP = "100.97.214.63"
@@ -50,8 +52,12 @@ def register_node(mc_id, role=None, status="unknown"):
     if not current_role:
         try:
             res = requests.get(url, timeout=2)
-            if res.status_code == 200:
-                current_role = res.json()[0].get('role', 'worker')
+            if res.status_code == 200 and res.json():
+                # Decodifica o valor que vem em Base64 da resposta em formato de lista do Consul
+                val_b64 = res.json()[0].get('Value')
+                if val_b64:
+                    old_data = json.loads(base64.b64decode(val_b64).decode('utf-8'))
+                    current_role = old_data.get('role', 'worker')
         except:
             current_role = "worker"
 
