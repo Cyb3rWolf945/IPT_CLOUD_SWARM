@@ -14,7 +14,7 @@
       args:
         creates: /usr/bin/docker
 
-# ==========================================
+    # ==========================================
     # LÓGICA DO MANAGER (Primário ou Secundário)
     # ==========================================
     - name: Bloco do Manager
@@ -26,14 +26,14 @@
           failed_when: false
           changed_when: false
 
-        # LÍDER PRIMÁRIO: Só faz init se o token passado for vazio, nulo ou omitido
+        # LÍDER PRIMÁRIO: Inicializa o cluster global
         - name: Inicializar Swarm (Líder Primário)
           command: docker swarm init --listen-addr 0.0.0.0:2377 --advertise-addr {{ local_ip }}:2377
           when: swarm_status.rc != 0 and (token is not defined or token == "" or token == none)
 
-        # MANAGER SECUNDÁRIO: Só tenta o join se receber um token real preenchido
+        # MANAGER SECUNDÁRIO: Junta-se ao cluster GLOBAL usando a porta correta
         - name: Juntar ao Swarm como Manager Secundário
-          command: "docker swarm join --token {{ token }} {{ manager_ip }}:2377"
+          command: "docker swarm join --token {{ token }} {{ manager_ip }}:{{ swarm_port }} --advertise-addr {{ local_ip }}:2377"
           when: swarm_status.rc != 0 and (token is defined and token != "" and token != none)
         
         - name: Obter token de worker
@@ -51,9 +51,10 @@
             body_format: json
             body: 
               manager_ip: "{{ local_ip }}"
+              swarm_port: 2377  # Internamente dentro da região, os workers locais vão bater neste manager na porta 2377
               worker_token: "{{ worker_token.stdout }}"
               manager_token: "{{ manager_token.stdout }}"
-              
+
     # ==========================================
     # LÓGICA DO WORKER
     # ==========================================

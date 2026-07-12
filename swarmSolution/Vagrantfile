@@ -43,9 +43,10 @@ Vagrant.configure("2") do |config|
       ansible.extra_vars = {
           "role"            => ENV["NODE_ROLE"],
           "local_ip"        => ENV["LOCAL_TAILSCALE_IP"],
-          "orchestrator_ip" => ENV["LOCAL_TAILSCALE_IP"], # <-- Força o IP Tailscale do Host
+          "orchestrator_ip" => ENV["LOCAL_TAILSCALE_IP"],
           "manager_ip"      => ENV["MANAGER_API_IP"],
-          "token"           => ENV["SWARM_TOKEN"]
+          "token"           => ENV["SWARM_TOKEN"],
+          "swarm_port"      => ENV["SWARM_PORT"] || "2377" # <-- Adicionado aqui
         }
     end
   end

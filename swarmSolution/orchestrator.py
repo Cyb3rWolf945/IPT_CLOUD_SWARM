@@ -58,7 +58,7 @@ def get_hostname():
         f.write(result)
     return result
 
-def run_vagrant_async(command, mc_id, role=None, manager_ip=None, local_ip=None, token=None):
+def run_vagrant_async(command, mc_id, role=None, manager_ip=None, local_ip=None, token=None, swarm_port=None):
     node_name = f"swarm-node-{mc_id}"
     env = os.environ.copy()
     
@@ -67,6 +67,7 @@ def run_vagrant_async(command, mc_id, role=None, manager_ip=None, local_ip=None,
     if manager_ip: env["MANAGER_API_IP"] = manager_ip
     if local_ip: env["LOCAL_TAILSCALE_IP"] = local_ip
     if token: env["SWARM_TOKEN"] = token
+    if swarm_port: env["SWARM_PORT"] = str(swarm_port) # <-- Nova linha
     env["NODE_REGION"] = REGION 
     
     full_command = command + [node_name]
@@ -148,7 +149,7 @@ def handle_minecraft_trigger():
     
     # Precisamos de adaptar ligeiramente a tua função run_vagrant_async para aceitar o swarm_port, 
     # ou podes passá-lo concatenado no manager_ip se preferires. Vamos passá-lo como variável extra se atualizares a função:
-    run_vagrant_async(["vagrant", "up"], mc_id, role, manager_ip, local_ip, token)
+    run_vagrant_async(["vagrant", "up"], mc_id, role, manager_ip, local_ip, token, swarm_port)
     
     return jsonify({"status": "Provisioning started", "role": role, "region": REGION}), 202
 
