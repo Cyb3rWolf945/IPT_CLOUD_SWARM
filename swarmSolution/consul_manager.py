@@ -2,49 +2,39 @@ import requests
 
 # IP da máquina que aloja o contentor do Consul (Rede Tailscale)
 CONSUL_IP = "100.97.214.63"
-CONSUL_KV_URL = f"http://{CONSUL_IP}:8500/v1/kv/swarm/state"
+BASE_URL = f"http://{CONSUL_IP}:8500/v1/kv/swarm/regions"
 
-def get_cluster_state():
-    """
-    Lê o estado atual do cluster diretamente do Consul KV.
-    Retorna um dicionário vazio se não encontrar dados ou falhar.
-    """
+def get_cluster_state(region):
+    """Lê o estado atual do cluster de uma região específica do Consul KV."""
     try:
-        # O parâmetro ?raw faz o Consul devolver o JSON puro que lá guardámos
-        response = requests.get(f"{CONSUL_KV_URL}?raw", timeout=2)
+        response = requests.get(f"{BASE_URL}/{region}/state?raw", timeout=2)
         if response.status_code == 200:
             return response.json()
     except requests.exceptions.RequestException:
-        print(f"[ERRO - CONSUL] Não foi possível contactar o Consul em {CONSUL_IP}")
+        print(f"[ERRO - CONSUL] Não foi possível contactar o Consul em {CONSUL_IP} para a região {region}")
     return {}
 
-def save_cluster_state(state):
-    """
-    Grava ou atualiza o estado do cluster no Consul KV.
-    Retorna True se for bem sucedido, False caso contrário.
-    """
+def save_cluster_state(region, state):
+    """Grava ou atualiza o estado do cluster de uma região no Consul KV."""
     try:
-        response = requests.put(CONSUL_KV_URL, json=state, timeout=2)
+        response = requests.put(f"{BASE_URL}/{region}/state", json=state, timeout=2)
         return response.status_code == 200
     except requests.exceptions.RequestException:
-        print("[ERRO - CONSUL] Falha ao gravar o estado no Consul.")
+        print(f"[ERRO - CONSUL] Falha ao gravar o estado no Consul para a região {region}.")
         return False
 
-def delete_cluster_state():
-    """
-    Remove a chave de estado do Consul (útil para resets/cleanups).
-    """
+def delete_cluster_state(region):
+    """Remove a chave de estado de uma região do Consul."""
     try:
-        response = requests.delete(CONSUL_KV_URL, timeout=2)
+        response = requests.delete(f"{BASE_URL}/{region}/state", timeout=2)
         return response.status_code == 200
     except requests.exceptions.RequestException:
-        print("[ERRO - CONSUL] Falha ao limpar o estado no Consul.")
+        print(f"[ERRO - CONSUL] Falha ao limpar o estado no Consul para a região {region}.")
         return False
 
-def register_node(mc_id, role=None, status="unknown"):
-    """Grava ou atualiza a informação de um nó específico no Consul KV"""
-    # Se a role for omitida (como no STOP), tentamos ler o que já lá estava para não perder o dado
-    url = f"http://{CONSUL_IP}:8500/v1/kv/swarm/nodes/swarm-node-{mc_id}"
+def register_node(region, mc_id, role=None, status="unknown"):
+    """Grava ou atualiza a informação de um nó numa região específica."""
+    url = f"{BASE_URL}/{region}/nodes/swarm-node-{mc_id}"
     
     current_role = role
     if not current_role:
@@ -58,7 +48,8 @@ def register_node(mc_id, role=None, status="unknown"):
     node_data = {
         "node_name": f"swarm-node-{mc_id}",
         "role": current_role,
-        "status": status
+        "status": status,
+        "region": region
     }
     try:
         requests.put(url, json=node_data, timeout=2)
@@ -66,18 +57,18 @@ def register_node(mc_id, role=None, status="unknown"):
     except requests.exceptions.RequestException:
         return False
 
-def delete_node(mc_id):
-    """Remove a chave de um nó específico do Consul KV"""
-    url = f"http://{CONSUL_IP}:8500/v1/kv/swarm/nodes/swarm-node-{mc_id}"
+def delete_node(region, mc_id):
+    """Remove a chave de um nó específico de uma região."""
+    url = f"{BASE_URL}/{region}/nodes/swarm-node-{mc_id}"
     try:
         requests.delete(url, timeout=2)
         return True
     except requests.exceptions.RequestException:
         return False
 
-def clear_all_nodes():
-    """Wipe total da pasta de nós no Consul KV (?recurse)"""
-    url = f"http://{CONSUL_IP}:8500/v1/kv/swarm/nodes/?recurse"
+def clear_all_nodes(region):
+    """Wipe total da pasta de nós de uma região específica."""
+    url = f"{BASE_URL}/{region}/nodes/?recurse"
     try:
         requests.delete(url, timeout=2)
         return True
