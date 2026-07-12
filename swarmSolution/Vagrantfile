@@ -41,12 +41,12 @@ Vagrant.configure("2") do |config|
       ansible.compatibility_mode = "2.0"
       ansible.playbook = "provision.yml"
       ansible.extra_vars = {
-            "role"            => ENV["NODE_ROLE"],
-            "local_ip"        => ENV["LOCAL_TAILSCALE_IP"],
-            "orchestrator_ip" => "10.0.2.2",
-            "manager_ip"      => ENV["MANAGER_API_IP"],
-            "token"           => ENV["SWARM_TOKEN"]
-          }
-      end
+          "role"            => ENV["NODE_ROLE"],
+          "local_ip"        => ENV["LOCAL_TAILSCALE_IP"],
+          "orchestrator_ip" => ENV["LOCAL_TAILSCALE_IP"], # <-- Força o IP Tailscale do Host
+          "manager_ip"      => ENV["MANAGER_API_IP"],
+          "token"           => ENV["SWARM_TOKEN"]
+        }
+    end
   end
 end
