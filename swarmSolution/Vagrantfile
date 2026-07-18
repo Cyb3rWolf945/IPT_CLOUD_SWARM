@@ -5,31 +5,18 @@ Vagrant.configure("2") do |config|
   local_ip = ENV['LOCAL_TAILSCALE_IP'] || "127.0.0.1"
   swarm_token = ENV['SWARM_TOKEN'] || ""
   
+  # Calculamos a porta baseada no ID para evitar colisões
+  swarm_port   = (2377 + node_id.to_i)
+  gossip_port  = (7946 + node_id.to_i)
+  overlay_port = (4789 + node_id.to_i)
+
   config.vm.define "swarm-node-#{node_id}" do |node|
-    host_arch = `uname -m`.strip
-
-    if host_arch == 'x86_64'
-      node.vm.box = "ubuntu/jammy64"
-    else
-      node.vm.box = "bento/ubuntu-22.04"
-    end
-
+    node.vm.box = `uname -m`.strip == 'x86_64' ? "ubuntu/jammy64" : "bento/ubuntu-22.04"
     node.vm.hostname = "swarm-node-#{node_id}"
 
-    # SE FOR MANAGER: Mantém as portas padrão fixas para o exterior ser previsível.
-    # SE FOR WORKER: Aplica o offset para não colidir caso subas múltiplos nós no mesmo host.
-    swarm_port   = (role == "manager") ? 2377 : (2377 + node_id.to_i)
-    gossip_port  = (role == "manager") ? 7946 : (7946 + node_id.to_i)
-    overlay_port = (role == "manager") ? 4789 : (4789 + node_id.to_i)
-
-    # 1. Porta de Gestão do Swarm (TCP 2377) aberta para a rede Tailscale
     node.vm.network "forwarded_port", guest: 2377, host: swarm_port, host_ip: "0.0.0.0", id: "swarm_mgmt"
-
-    # 2. Porta de Gossip/Descoberta (TCP/UDP 7946) - Necessária para os nós se verem
     node.vm.network "forwarded_port", guest: 7946, host: gossip_port, host_ip: "0.0.0.0", id: "swarm_gossip_tcp"
     node.vm.network "forwarded_port", guest: 7946, host: gossip_port, host_ip: "0.0.0.0", protocol: "udp", id: "swarm_gossip_udp"
-
-    # 3. Porta de Overlay Network (UDP 4789) - Necessária para o tráfego dos containers
     node.vm.network "forwarded_port", guest: 4789, host: overlay_port, host_ip: "0.0.0.0", protocol: "udp", id: "swarm_overlay"
 
     node.vm.provider "virtualbox" do |vb|
@@ -41,13 +28,13 @@ Vagrant.configure("2") do |config|
       ansible.compatibility_mode = "2.0"
       ansible.playbook = "provision.yml"
       ansible.extra_vars = {
-          "role"            => ENV["NODE_ROLE"],
-          "local_ip"        => ENV["LOCAL_TAILSCALE_IP"],
-          "orchestrator_ip" => ENV["LOCAL_TAILSCALE_IP"],
-          "manager_ip"      => ENV["MANAGER_API_IP"],
-          "token"           => ENV["SWARM_TOKEN"],
-          "swarm_port"      => ENV["SWARM_PORT"] || "2377" # <-- Adicionado aqui
-        }
+          "role"            => role,
+          "local_ip"        => local_ip,
+          "orchestrator_ip" => local_ip,
+          "manager_ip"      => manager_ip,
+          "token"           => swarm_token,
+          "swarm_port"      => swarm_port
+      }
     end
   end
 end

@@ -53,3 +53,11 @@ The Lua Scripts will send HTTP POST requests for each operation named before.
 
 ---
 
+Just in case:
+
+docker rm consul-swarm
+
+docker run -d --name=consul-swarm \
+  -p 8500:8500 \
+  -h consul-server \
+  hashicorp/consul:latest agent -dev -client=0.0.0.0 -ui

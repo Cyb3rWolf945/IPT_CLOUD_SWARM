@@ -67,11 +67,11 @@ def run_vagrant_async(command, mc_id, role=None, manager_ip=None, local_ip=None,
     if manager_ip: env["MANAGER_API_IP"] = manager_ip
     if local_ip: env["LOCAL_TAILSCALE_IP"] = local_ip
     if token: env["SWARM_TOKEN"] = token
-    if swarm_port: env["SWARM_PORT"] = str(swarm_port) # <-- Nova linha
+    # Garantimos que a porta é passada para o processo
+    env["SWARM_PORT"] = str(swarm_port) if swarm_port else "2377"
     env["NODE_REGION"] = REGION 
     
     full_command = command + [node_name]
-    print(f"--- [EXEC] A executar comando: {' '.join(full_command)} ---")
     subprocess.Popen(full_command, env=env)
 
 
@@ -84,74 +84,95 @@ def handle_minecraft_trigger():
     data = request.json
     mc_id = data.get('mc_id')
     local_ip = data.get('local_ip') 
+    requested_role = data.get('role') # Pode ser None, 'manager' ou 'worker'
     
     if not mc_id or not local_ip:
         return jsonify({"error": "Faltam parâmetros"}), 400
         
     node_name = f"swarm-node-{mc_id}"
     
-    # 1. Verifica se a MINHA região já tem manager
+    # Pesquisa o estado atual do cluster
     my_manager_info = discover_manager(REGION)
-    # 2. Verifica se OUTRA região qualquer já tem um ativo
     any_manager_info = discover_any_manager()
     
-    # Define a porta do Swarm baseada no mc_id (igual à lógica do teu Vagrantfile)
-    # Se for o node 0 (Manager da região), usa 2377. Se for worker, aplica o offset.
+    # As portas baseiam-se no ID (fundamental para não colidirem no teu PC sozinho)
     calculated_port = 2377 if str(mc_id) == "0" else (2377 + int(mc_id))
     
-    if not my_manager_info and not any_manager_info:
-        # Ninguém no mundo tem manager. Este será o Líder Primário
-        role = "manager"
-        manager_ip = local_ip
-        swarm_port = calculated_port
-        token = ""
-        print(f"--- [ELEIÇÃO LÍDER GLOBAL] {node_name} será o Manager Primário na porta {swarm_port}! ---")
+    # ==========================================
+    # 1. DETERMINAR A ROLE FINAL
+    # ==========================================
+    role = None
+    if requested_role:
+        # Se o utilizador pediu explicitamente no Lua, a palavra dele é lei
+        role = requested_role.lower()
+        print(f"--- [OVERRIDE MANUAL] Role forçada para: {role} ---")
+    else:
+        # Modo Piloto Automático Original
+        if not my_manager_info and not any_manager_info:
+            role = "manager" # Ninguém tem, eu sou o manager global
+        elif not my_manager_info and any_manager_info:
+            role = "manager" # Outros têm, mas eu não. Sou a ponte regional
+        else:
+            role = "worker"  # Já tenho manager na minha região
+        print(f"--- [PILOTO AUTOMÁTICO] Role deduzida: {role} ---")
+
+    # ==========================================
+    # 2. APLICAR LÓGICA DE CLUSTER COM BASE NA ROLE
+    # ==========================================
+    if role == "manager":
+        if not my_manager_info and not any_manager_info:
+            # Líder Primário Absoluto
+            manager_ip = local_ip
+            swarm_port = calculated_port
+            token = ""
+            print(f"--- [ELEIÇÃO LÍDER GLOBAL] {node_name} será o Manager Primário na porta {swarm_port}! ---")
+            consul_manager.save_cluster_state(REGION, {
+                "manager_ip": manager_ip, 
+                "swarm_port": swarm_port,
+                "manager_token": "", 
+                "worker_token": ""
+            })
+            
+        else:
+            # Manager Secundário
+            target = my_manager_info if my_manager_info else any_manager_info
+            manager_ip = target["manager_ip"]
+            swarm_port = target.get("swarm_port", 2377) 
+            token = target["manager_token"]
+            print(f"--- [CONEXÃO MANAGER SECUNDÁRIO] {node_name} liga-se a {manager_ip}:{swarm_port} ---")
+            
+            # Atualiza o estado da tua região se fores o primeiro manager local
+            if not my_manager_info:
+                consul_manager.save_cluster_state(REGION, {
+                    "manager_ip": local_ip, 
+                    "swarm_port": calculated_port, 
+                    "manager_token": token, 
+                    "worker_token": target["worker_token"]
+                })
+                
+    elif role == "worker":
+        # Trabalhador
+        target = my_manager_info if my_manager_info else any_manager_info
         
-        # Guarda o estado inicial no Consul incluindo a porta
-        consul_manager.save_cluster_state(REGION, {
-            "manager_ip": manager_ip, 
-            "swarm_port": swarm_port,
-            "manager_token": "", 
-            "worker_token": ""
-        })
-        
-    elif not my_manager_info and any_manager_info:
-        # Outra região tem manager, mas a minha não. Torna-se Manager Secundário ligado à outra região!
-        role = "manager"
-        manager_ip = any_manager_info["manager_ip"]
-        # Vai buscar a porta real externa do manager da outra região!
-        swarm_port = any_manager_info.get("swarm_port", 2377) 
-        token = any_manager_info["manager_token"]
-        print(f"--- [CONEXÃO INTER-REGIÃO] {node_name} liga-se como Manager Secundário a {manager_ip}:{swarm_port} ---")
-        
-        # Salva o estado da tua região (para os teus workers locais saberem onde se ligar)
-        consul_manager.save_cluster_state(REGION, {
-            "manager_ip": local_ip, 
-            "swarm_port": calculated_port, # A porta local deste manager regional
-            "manager_token": token, 
-            "worker_token": any_manager_info["worker_token"]
-        })
+        if not target:
+            # Segurança: não podes ter um worker se ninguém criou um manager primeiro
+            return jsonify({"error": "Erro: Nenhum Manager ativo detetado no mundo. Cria um manager primeiro!"}), 400
+            
+        manager_ip = target["manager_ip"]
+        swarm_port = target.get("swarm_port", 2377)
+        token = target.get("worker_token", "")
+        print(f"--- [WORKER LOCAL] {node_name} junta-se ao cluster via {manager_ip}:{swarm_port} ---")
         
     else:
-        # A minha região já tem manager próprio. Este entra como worker local
-        role = "worker"
-        manager_ip = my_manager_info["manager_ip"]
-        swarm_port = my_manager_info.get("swarm_port", 2377)
-        token = my_manager_info.get("worker_token") if my_manager_info.get("worker_token") else ""
-        print(f"--- [WORKER LOCAL] {node_name} junta-se ao Manager Regional em {manager_ip}:{swarm_port} ---")
+        return jsonify({"error": "Role inválida fornecida"}), 400
 
-    # [CONSUL] Regista o nó dentro da sua região
+    # ==========================================
+    # 3. LANÇAR VM
+    # ==========================================
     consul_manager.register_node(REGION, mc_id, role, "provisioning")
-
-    # Passamos as variáveis corretas para o subprocesso do Vagrant
-    # NOTA: O manager_ip agora precisa de levar a porta acoplada ou tratas isso no Ansible.
-    # Como o teu Ansible espera `{{ manager_ip }}:{{ swarm_port }}`, passamos ambos.
-    
-    # Precisamos de adaptar ligeiramente a tua função run_vagrant_async para aceitar o swarm_port, 
-    # ou podes passá-lo concatenado no manager_ip se preferires. Vamos passá-lo como variável extra se atualizares a função:
     run_vagrant_async(["vagrant", "up"], mc_id, role, manager_ip, local_ip, token, swarm_port)
     
-    return jsonify({"status": "Provisioning started", "role": role, "region": REGION}), 202
+    return jsonify({"status": "Provisioning started", "role": role, "mode": "manual" if requested_role else "auto"}), 202
 
 @app.route('/api/cluster/state', methods=['PUT', 'GET'])
 def manage_state():
