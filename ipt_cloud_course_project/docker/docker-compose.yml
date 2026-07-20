@@ -1,10 +1,7 @@
 # ================================================================
 # Docker Compose — Phase 2: Containerized HA Infrastructure
-# Usage: docker compose -f docker/docker-compose.yml up -d
-#        docker compose -f docker/docker-compose.yml up -d --scale web=2 --scale websocket=2
 # ================================================================
 
-# ─── Networks ────────────────────────────────────────────────────
 networks:
   ipt_cloud_net:
     driver: overlay
@@ -12,19 +9,15 @@ networks:
       config:
         - subnet: 10.77.0.0/16
 
-# ─── Volumes ─────────────────────────────────────────────────────
 volumes:
   minio_data:
   loki_data:
   grafana_data:
   portainer_data:
 
-# ─── Services ────────────────────────────────────────────────────
 services:
+  # ... (Consul, DB, HAProxy, PgBouncer, Redis mantêm-se iguais) ...
 
-  # ==================================================================
-  # TIER: Consul Cluster
-  # ==================================================================
   consul:
     image: hashicorp/consul:1.18
     hostname: "consul-{{.Task.Slot}}"
@@ -51,11 +44,8 @@ services:
       restart_policy:
         condition: on-failure
 
-  # ==================================================================
-  # TIER: Database Cluster
-  # ==================================================================
   db:
-    image: ipt_cloud/patroni:latest
+    image: 127.0.0.1:5050/ipt_cloud/patroni:latest
     hostname: "db-{{.Task.Slot}}"
     networks:
       ipt_cloud_net:
@@ -80,9 +70,6 @@ services:
       restart_policy:
         condition: on-failure
 
-  # ==================================================================
-  # TIER: HAProxy — Database Routing (health-checks Patroni primary)
-  # ==================================================================
   haproxy:
     image: haproxy:2.9-alpine
     hostname: "haproxy-{{.Task.Slot}}"
@@ -99,9 +86,6 @@ services:
       restart_policy:
         condition: on-failure
 
-  # ==================================================================
-  # TIER: PgBouncer Connection Poolers
-  # ==================================================================
   pgbouncer:
     image: edoburu/pgbouncer:latest
     hostname: "pgbouncer-{{.Task.Slot}}"
@@ -123,9 +107,6 @@ services:
       restart_policy:
         condition: on-failure
 
-  # ==================================================================
-  # TIER: Redis Sentinel Cluster
-  # ==================================================================
   redis-master:
     image: redis:7-alpine
     hostname: redis-master
@@ -179,11 +160,13 @@ services:
       restart_policy:
         condition: on-failure
 
-  # ==================================================================
-  # TIER: Web Application (Apache + PHP)
-  # ==================================================================
   web:
-    image: ipt_cloud/php-app:latest
+    build:
+      context: ..
+      dockerfile: docker/images/php-app/Dockerfile
+    image: 127.0.0.1:5050/ipt_cloud/php-app:latest
+    volumes:
+      - /opt/ipt_cloud_course_project/app:/var/www/html
     networks:
       ipt_cloud_net:
         aliases:
@@ -198,14 +181,17 @@ services:
       WS_PORT: "80"
     deploy:
       replicas: 2
+      placement:
+        constraints:
+          - node.role == worker
       restart_policy:
         condition: on-failure
 
-  # ==================================================================
-  # TIER: WebSocket Server
-  # ==================================================================
   websocket:
-    image: ipt_cloud/ratchet-ws:latest
+    build:
+      context: ..
+      dockerfile: docker/images/ratchet-ws/Dockerfile
+    image: 127.0.0.1:5050/ipt_cloud/ratchet-ws:latest
     networks:
       ipt_cloud_net:
         aliases:
@@ -217,12 +203,12 @@ services:
       WS_PORT: "8000"
     deploy:
       replicas: 2
+      placement:
+        constraints:
+          - node.role == worker
       restart_policy:
         condition: on-failure
 
-  # ==================================================================
-  # TIER: Nginx Reverse Proxy
-  # ==================================================================
   nginx:
     image: nginx:1.25-alpine
     hostname: "nginx-{{.Task.Slot}}"
@@ -239,9 +225,6 @@ services:
       restart_policy:
         condition: on-failure
 
-  # ==================================================================
-  # TIER: MinIO Object Storage
-  # ==================================================================
   minio:
     image: minio/minio:latest
     hostname: minio
@@ -278,9 +261,6 @@ services:
       "
     restart: "no"
 
-  # ==================================================================
-  # TIER: Monitoring
-  # ==================================================================
   netdata:
     image: netdata/netdata:latest
     hostname: netdata
@@ -325,10 +305,6 @@ services:
     deploy:
       mode: global
 
-
-  # ==================================================================
-  # TIER: Logging Stack
-  # ==================================================================
   loki:
     image: grafana/loki:2.9.10
     hostname: loki
@@ -376,9 +352,6 @@ services:
     command: -config.file=/etc/promtail/config.yml
     restart: unless-stopped
 
-  # ==================================================================
-  # TIER: Management
-  # ==================================================================
   portainer:
     image: portainer/portainer-ce:latest
     hostname: portainer

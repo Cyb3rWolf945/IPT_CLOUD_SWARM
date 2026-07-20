@@ -13,12 +13,31 @@
       args:
         creates: /usr/bin/docker
 
+    # ==========================================
+    # Copiar infraestrutura e código da app
+    # ==========================================
+    - name: Criar diretoria raiz do projeto na VM
+      file:
+        path: /opt/ipt_cloud_course_project
+        state: directory
+        mode: '0755'
+
+    - name: Copiar pastas docker, app e ws mantendo a estrutura relativa
+      copy:
+        src: "../ipt_cloud_course_project/{{ item }}"
+        dest: /opt/ipt_cloud_course_project/
+      loop:
+        - docker
+        - app
+        - ws
+    # ==========================================
+
     - name: Bloco do Manager
       when: role == 'manager'
       block:
         - name: Inicializar Swarm
           command: docker swarm init --advertise-addr {{ local_ip }} --listen-addr 0.0.0.0:2377
-          when: role == 'manager'
+          ignore_errors: yes
 
         - name: Obter tokens
           command: docker swarm join-token {{ item }} -q
@@ -35,6 +54,39 @@
               swarm_port: "{{ swarm_port }}"
               worker_token: "{{ tokens.results[0].stdout }}"
               manager_token: "{{ tokens.results[1].stdout }}"
+
+        # ==========================================
+        # Lógica do Registry Local e Deploy
+        # ==========================================
+        - name: Criar serviço de Registry local no Swarm (Porta 5050)
+          command: docker service create --name registry --publish published=5050,target=5000 registry:2
+          ignore_errors: yes
+
+        - name: Aguardar 10 segundos para o Registry arrancar
+          pause:
+            seconds: 10
+
+        - name: Construir e enviar imagens para o Registry Local
+          shell: |
+            docker build -t ipt_cloud/php-app:latest -f docker/images/php-app/Dockerfile .
+            docker build -t ipt_cloud/ratchet-ws:latest -f docker/images/ratchet-ws/Dockerfile .
+            docker build -t ipt_cloud/patroni:latest -f docker/images/patroni/Dockerfile .
+            
+            docker tag ipt_cloud/php-app:latest 127.0.0.1:5050/ipt_cloud/php-app:latest
+            docker push 127.0.0.1:5050/ipt_cloud/php-app:latest
+            
+            docker tag ipt_cloud/ratchet-ws:latest 127.0.0.1:5050/ipt_cloud/ratchet-ws:latest
+            docker push 127.0.0.1:5050/ipt_cloud/ratchet-ws:latest
+            
+            docker tag ipt_cloud/patroni:latest 127.0.0.1:5050/ipt_cloud/patroni:latest
+            docker push 127.0.0.1:5050/ipt_cloud/patroni:latest
+          args:
+            chdir: /opt/ipt_cloud_course_project/
+
+        - name: Fazer Deploy da Stack Docker no Cluster
+          command: docker stack deploy -c docker-compose.yml minha_infra_stack
+          args:
+            chdir: /opt/ipt_cloud_course_project/docker
 
     - name: Bloco do Worker
       when: role == 'worker'
